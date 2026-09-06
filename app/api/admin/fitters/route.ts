@@ -21,7 +21,11 @@ export async function POST(req: Request) {
     const form = await formBody(req);
     const raw = JSON.parse(String(form.get('data')));
     const parsed = fitterSchema.safeParse(raw);
-    if (!parsed.success) throw new HttpError(400, 'Invalid listing');
+    if (!parsed.success) {
+      console.error('Validation error in admin fitters:', JSON.stringify(parsed.error.issues, null, 2));
+      const issueMsg = parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join(', ');
+      throw new HttpError(400, `هەڵەی زانیاری: ${issueMsg}`);
+    }
     const { website, ...data } = parsed.data;
     const id = typeof raw.id === 'string' ? raw.id : randomUUID();
     const existing = (await rows<Fitter>('fitters')).find((f) => f.id === id);

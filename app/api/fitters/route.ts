@@ -20,7 +20,11 @@ export async function POST(req: Request) {
       throw new HttpError(413, 'Too large');
     const form = await formBody(req);
     const parsed = fitterSchema.safeParse(JSON.parse(String(form.get('data'))));
-    if (!parsed.success) throw new HttpError(400, 'Invalid listing');
+    if (!parsed.success) {
+      console.error('Validation error in public fitters:', JSON.stringify(parsed.error.issues, null, 2));
+      const issueMsg = parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join(', ');
+      throw new HttpError(400, `هەڵەی زانیاری: ${issueMsg}`);
+    }
     const { website, ...data } = parsed.data;
     const file = form.get('photo');
     if (file instanceof File && file.size) photo = await savePhoto(file);

@@ -46,7 +46,7 @@ export function FitterForm({
   const [coords, setCoords] = useState<[number, number]>(
     initial ? [initial.latitude, initial.longitude] : CENTER,
   );
-  const [picked, setPicked] = useState(!!initial);
+  const [picked, setPicked] = useState(true);
   const [photo, setPhoto] = useState<File>();
   const [preview, setPreview] = useState(initial?.photo_url || '');
   const [removePhoto, setRemovePhoto] = useState(false);
@@ -65,7 +65,6 @@ export function FitterForm({
     e.preventDefault();
     setError('');
     if (
-      !picked ||
       (!serviceText.trim()) ||
       (!alwaysOpen && (!openTime || !closeTime))
     ) {
@@ -82,12 +81,12 @@ export function FitterForm({
       whatsapp: form.get('whatsapp'),
       neighborhood: form.get('neighborhood'),
       type,
-      services: [serviceText],
+      services: [serviceText.trim()],
       working_hours: Array.from({length: 7}).map(() => ({
         closed: false,
         allDay: alwaysOpen,
-        open: openTime,
-        close: closeTime
+        open: openTime || '08:00',
+        close: closeTime || '18:00'
       })),
       latitude: coords[0],
       longitude: coords[1],
@@ -104,11 +103,15 @@ export function FitterForm({
         method: 'POST',
         body,
       });
-      if (!r.ok) throw Error();
+      if (!r.ok) {
+        const resData = await r.json().catch(() => ({}));
+        throw new Error(resData.error || t.error);
+      }
       if (admin) onSaved?.();
       else setSuccess(true);
-    } catch {
-      setError(t.error);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : t.error;
+      setError(msg);
     } finally {
       setBusy(false);
     }
@@ -141,7 +144,6 @@ export function FitterForm({
             dir="ltr"
             defaultValue={initial?.phone}
             required
-            pattern="[+]?[0-9 ]{7,22}"
             placeholder="+964 7xx xxx xxxx"
           />
         </label>
@@ -152,7 +154,6 @@ export function FitterForm({
             type="tel"
             dir="ltr"
             defaultValue={initial?.phone2}
-            pattern="[+]?[0-9 ]{7,22}"
           />
         </label>
         <label className="field">
@@ -162,7 +163,6 @@ export function FitterForm({
             type="tel"
             dir="ltr"
             defaultValue={initial?.whatsapp}
-            pattern="[+]?[0-9 ]{7,22}"
           />
         </label>
         <label className="field">
@@ -245,8 +245,8 @@ export function FitterForm({
                 dir="ltr"
                 step="any"
                 required
-                min={i === 0 ? 35.2 : 45}
-                max={i === 0 ? 35.9 : 45.9}
+                min={i === 0 ? -90 : -180}
+                max={i === 0 ? 90 : 180}
                 value={coords[i]}
                 onChange={(e) => {
                   setCoords(
