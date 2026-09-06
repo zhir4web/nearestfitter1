@@ -49,3 +49,22 @@ export type Contact = {
   created_at: string;
 };
 export type Language = 'ckb' | 'en' | 'ar';
+export type DispatchStatus =
+  | 'pending'
+  | 'accepted'
+  | 'en_route'
+  | 'completed'
+  | 'declined'
+  | 'expired';
+export type DispatchRequest = {
+  id: string;
+  fitter_id: string;
+  user_lat: number;
+  user_lng: number;
+  status: DispatchStatus;
+  fitter_token: string;
+  user_token: string;
+  created_at: string;
+  accepted_at?: string;
+};
+

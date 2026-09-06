@@ -22,6 +22,7 @@ model Fitter {
  demo Boolean @default(false)
  created_at String
  reviews Review[]
+ dispatches DispatchRequest[]
  @@index([status])
  @@map("fitters")
 }
@@ -50,4 +51,20 @@ model RateLimit {
  count Int
  expires BigInt
  @@map("rate_limits")
+}
+model DispatchRequest {
+ id            String  @id
+ fitter_id     String
+ fitter        Fitter  @relation(fields:[fitter_id],references:[id],onDelete:Cascade)
+ user_lat      Float
+ user_lng      Float
+ status        String  @default("pending")
+ fitter_token  String  @unique
+ user_token    String  @unique
+ created_at    String
+ accepted_at   String?
+ @@index([fitter_token])
+ @@index([user_token])
+ @@index([status, created_at])
+ @@map("dispatch_requests")
 }

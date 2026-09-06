@@ -1388,3 +1388,205 @@ h1 > span {
     font-size: 16px;
   }
 }
+
+/* ============================================
+   DISPATCH FEATURE STYLES
+   ============================================ */
+
+/* Request help button */
+.dispatch-btn {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  color: #fff;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  box-shadow: 0 4px 20px rgba(220, 38, 38, 0.35);
+  transition: transform 0.15s, box-shadow 0.15s;
+  animation: dispatch-pulse-btn 2.5s ease-in-out infinite;
+}
+.dispatch-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(220, 38, 38, 0.5);
+}
+.dispatch-btn:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+@keyframes dispatch-pulse-btn {
+  0%, 100% { box-shadow: 0 4px 20px rgba(220,38,38,0.35); }
+  50% { box-shadow: 0 4px 30px rgba(220,38,38,0.6); }
+}
+
+/* Modal overlay */
+.dispatch-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  animation: fade-in 0.2s ease;
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Modal card */
+.dispatch-modal {
+  background: #181b20;
+  border: 1px solid #30343d;
+  border-radius: 1.5rem;
+  padding: 2rem 1.75rem;
+  max-width: 22rem;
+  width: 100%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9rem;
+  box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+  animation: slide-up 0.25s ease;
+}
+@keyframes slide-up {
+  from { transform: translateY(30px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.dispatch-modal h2 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #f4f4f0;
+  margin: 0;
+}
+.dispatch-modal p {
+  font-size: 0.9rem;
+  color: #aab1bb;
+  margin: 0;
+  line-height: 1.5;
+}
+.dispatch-success {
+  color: #4ade80 !important;
+}
+
+/* Icon container */
+.dispatch-icon {
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.dispatch-icon.waiting {
+  background: rgba(251, 146, 60, 0.12);
+  border: 2px solid #fb923c;
+  color: #fb923c;
+}
+.dispatch-icon.accepted {
+  background: rgba(74, 222, 128, 0.12);
+  border: 2px solid #4ade80;
+  color: #4ade80;
+}
+.dispatch-icon.declined {
+  background: rgba(239, 68, 68, 0.12);
+  border: 2px solid #ef4444;
+  color: #ef4444;
+}
+
+/* Pulsing ring on waiting icon */
+.dispatch-pulse {
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  border: 2px solid #fb923c;
+  opacity: 0;
+  animation: ring-pulse 1.8s ease-out infinite;
+}
+@keyframes ring-pulse {
+  0%   { transform: scale(0.9); opacity: 0.7; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+
+/* Fitter name badge */
+.dispatch-fitter-info {
+  background: #252a31;
+  border: 1px solid #30343d;
+  border-radius: 0.75rem;
+  padding: 0.6rem 1.2rem;
+  font-size: 0.95rem;
+  color: #f4f4f0;
+  width: 100%;
+}
+
+/* Action buttons inside modal */
+.dispatch-actions {
+  display: flex;
+  gap: 0.6rem;
+  width: 100%;
+}
+.dispatch-actions .button,
+.dispatch-actions a.button {
+  flex: 1;
+}
+.dispatch-wa {
+  background: #16a34a !important;
+  color: #fff !important;
+  border: none !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  text-decoration: none;
+  border-radius: 0.75rem;
+  padding: 0.65rem 1rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  width: 100%;
+}
+.dispatch-call {
+  background: #2563eb !important;
+  color: #fff !important;
+  border: none !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  text-decoration: none;
+  border-radius: 0.75rem;
+  padding: 0.65rem 1rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  width: 100%;
+}
+.dispatch-cancel {
+  background: transparent !important;
+  color: #64748b !important;
+  border: 1px solid #30343d !important;
+  width: 100%;
+  font-size: 0.85rem;
+}
+.dispatch-cancel:hover {
+  color: #aab1bb !important;
+  border-color: #3f4550 !important;
+}
+
+/* Spinner for fitter acceptance page */
+.dispatch-spinner {
+  width: 3rem;
+  height: 3rem;
+  border: 3px solid #30343d;
+  border-top-color: #fb923c;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+

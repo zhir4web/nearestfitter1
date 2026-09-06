@@ -1,6 +1,6 @@
 import { PrismaClient, Prisma } from '@prisma/client';
 import { createClient } from '@supabase/supabase-js';
-import type { Fitter, Review, Contact } from '@/types';
+import type { Fitter, Review, Contact, DispatchRequest } from '@/types';
 type Table = 'fitters' | 'reviews' | 'contacts';
 type Row = Fitter | Review | Contact;
 const globalDb = globalThis as unknown as { db?: PrismaClient };
@@ -128,4 +128,88 @@ export async function publicFitters() {
           : 0,
       };
     });
+}
+export async function createDispatch(
+  data: DispatchRequest,
+): Promise<void> {
+  const p = local();
+  await p.dispatchRequest.create({
+    data: {
+      id: data.id,
+      fitter_id: data.fitter_id,
+      user_lat: data.user_lat,
+      user_lng: data.user_lng,
+      status: data.status,
+      fitter_token: data.fitter_token,
+      user_token: data.user_token,
+      created_at: data.created_at,
+      accepted_at: data.accepted_at ?? null,
+    },
+  });
+}
+export async function getDispatchByUserToken(
+  token: string,
+): Promise<(DispatchRequest & { fitter_name: string; fitter_phone: string; fitter_whatsapp: string }) | null> {
+  const p = local();
+  const r = await p.dispatchRequest.findUnique({
+    where: { user_token: token },
+    include: { fitter: true },
+  });
+  if (!r) return null;
+  return {
+    id: r.id,
+    fitter_id: r.fitter_id,
+    user_lat: r.user_lat,
+    user_lng: r.user_lng,
+    status: r.status as DispatchRequest['status'],
+    fitter_token: r.fitter_token,
+    user_token: r.user_token,
+    created_at: r.created_at,
+    accepted_at: r.accepted_at ?? undefined,
+    fitter_name: r.fitter.name,
+    fitter_phone: r.fitter.phone,
+    fitter_whatsapp: r.fitter.whatsapp,
+  };
+}
+export async function getDispatchByFitterToken(
+  token: string,
+): Promise<(DispatchRequest & { fitter_name: string; fitter_phone: string }) | null> {
+  const p = local();
+  const r = await p.dispatchRequest.findUnique({
+    where: { fitter_token: token },
+    include: { fitter: true },
+  });
+  if (!r) return null;
+  return {
+    id: r.id,
+    fitter_id: r.fitter_id,
+    user_lat: r.user_lat,
+    user_lng: r.user_lng,
+    status: r.status as DispatchRequest['status'],
+    fitter_token: r.fitter_token,
+    user_token: r.user_token,
+    created_at: r.created_at,
+    accepted_at: r.accepted_at ?? undefined,
+    fitter_name: r.fitter.name,
+    fitter_phone: r.fitter.phone,
+  };
+}
+export async function updateDispatchStatus(
+  id: string,
+  status: string,
+  accepted_at?: string,
+): Promise<void> {
+  const p = local();
+  await p.dispatchRequest.update({
+    where: { id },
+    data: { status, ...(accepted_at ? { accepted_at } : {}) },
+  });
+}
+export async function expireOldDispatches(): Promise<void> {
+  const p = local();
+  const cutoff = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+  await p.dispatchRequest.updateMany({
+    where: { status: 'pending', created_at: { lt: cutoff } },
+    data: { status: 'expired' },
+  });
 }
