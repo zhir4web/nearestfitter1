@@ -46,14 +46,6 @@ export function Header() {
             </button>
           ))}
         </div>
-        <Link
-          className="button primary add-link"
-          href="/add"
-          aria-label={t.add}
-        >
-          <Plus size={17} />
-          <span>{t.add}</span>
-        </Link>
       </div>
     </header>
   );
@@ -65,7 +57,6 @@ export function Footer() {
       <Link href="/">{t.map}</Link>
       <Link href="/about">{t.about}</Link>
       <Link href="/contact">{t.contact}</Link>
-      <Link href="/add">{t.add}</Link>
       <Link href="/admin">{t.admin}</Link>
     </footer>
   );
