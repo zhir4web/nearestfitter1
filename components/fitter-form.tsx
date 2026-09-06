@@ -261,51 +261,7 @@ export function FitterForm({
           ))}
         </div>
       </section>
-      <section className="form-section">
-        <h2 className="field-title">{t.hours} *</h2>
-        {hours.map((h, i) => {
-          const change = (field: string, value: string | boolean) =>
-            setHours(
-              hours.map((x, j) => (j === i ? { ...x, [field]: value } : x)),
-            );
-          return (
-            <div className="hours-row" key={i}>
-              <strong>{t.days[i]}</strong>
-              <label className="check-label">
-                <Checkbox
-                  checked={h.closed}
-                  onCheckedChange={(v) => change('closed', v === true)}
-                />
-                {t.dayClosed}
-              </label>
-              <label className="check-label">
-                <Checkbox
-                  checked={h.allDay}
-                  disabled={h.closed}
-                  onCheckedChange={(v) => change('allDay', v === true)}
-                />
-                {t.allDay}
-              </label>
-              <input
-                type="time"
-                aria-label={t.days[i] + ' ' + t.from}
-                required
-                disabled={h.closed || h.allDay}
-                value={h.open}
-                onChange={(e) => change('open', e.target.value)}
-              />
-              <input
-                type="time"
-                aria-label={t.days[i] + ' ' + t.to}
-                required
-                disabled={h.closed || h.allDay}
-                value={h.close}
-                onChange={(e) => change('close', e.target.value)}
-              />
-            </div>
-          );
-        })}
-      </section>
+
       <section className="form-section">
         <h2 className="field-title">{t.photo}</h2>
         {preview && (
