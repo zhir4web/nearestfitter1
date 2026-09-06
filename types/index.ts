@@ -6,7 +6,7 @@ export const services = [
   'sales',
   'roadside',
 ] as const;
-export type Service = (typeof services)[number];
+export type Service = string;
 export type Hours = {
   closed: boolean;
   open: string;

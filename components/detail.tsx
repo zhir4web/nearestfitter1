@@ -210,8 +210,8 @@ export function Detail({
           <section className="form-section">
             <h2 className="field-title">{t.services}</h2>
             <div className="service-tags">
-              {f.services.map((s) => (
-                <span key={s}>{t.serviceLabels[s]}</span>
+              {f.services.map((s, idx) => (
+                <span key={idx} className="free-text-service">{s}</span>
               ))}
             </div>
           </section>

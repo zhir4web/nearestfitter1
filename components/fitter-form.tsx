@@ -32,10 +32,17 @@ export function FitterForm({
 }) {
   const { t } = useLanguage();
   const [type, setType] = useState(initial?.type || 'fixed');
-  const [chosen, setChosen] = useState<Service[]>(
-    initial?.services || ['puncture'],
+  const [serviceText, setServiceText] = useState(
+    initial?.services?.[0] || '',
   );
-  const [hours, setHours] = useState(initial?.working_hours || defaultHours());
+  const initialOpen = initial?.working_hours?.find(h => !h.closed && !h.allDay)?.open || '08:00';
+  const initialClose = initial?.working_hours?.find(h => !h.closed && !h.allDay)?.close || '18:00';
+  
+  const [openTime, setOpenTime] = useState(initialOpen);
+  const [closeTime, setCloseTime] = useState(initialClose);
+  const [alwaysOpen, setAlwaysOpen] = useState(
+    initial?.working_hours?.every(h => h.allDay) || false
+  );
   const [coords, setCoords] = useState<[number, number]>(
     initial ? [initial.latitude, initial.longitude] : CENTER,
   );
@@ -59,8 +66,8 @@ export function FitterForm({
     setError('');
     if (
       !picked ||
-      !chosen.length ||
-      hours.some((h) => !h.closed && !h.allDay && h.open === h.close)
+      (!serviceText.trim()) ||
+      (!alwaysOpen && (!openTime || !closeTime))
     ) {
       setError(t.required);
       return;
@@ -75,8 +82,13 @@ export function FitterForm({
       whatsapp: form.get('whatsapp'),
       neighborhood: form.get('neighborhood'),
       type,
-      services: chosen,
-      working_hours: hours,
+      services: [serviceText],
+      working_hours: Array.from({length: 7}).map(() => ({
+        closed: false,
+        allDay: alwaysOpen,
+        open: openTime,
+        close: closeTime
+      })),
       latitude: coords[0],
       longitude: coords[1],
       website: form.get('website'),
@@ -180,20 +192,37 @@ export function FitterForm({
         </div>
       </div>
       <section className="form-section">
-        <h2 className="field-title">{t.services} *</h2>
-        <div className="choice-row">
-          {services.map((s) => (
-            <label key={s} className="choice-pill">
-              <Checkbox
-                checked={chosen.includes(s)}
-                onCheckedChange={(v) =>
-                  setChosen(v ? [...chosen, s] : chosen.filter((x) => x !== s))
-                }
-              />
-              {t.serviceLabels[s]}
-            </label>
-          ))}
+        <h2 className="field-title">دەربارەی کارەکان (کورتە) *</h2>
+        <textarea
+          className="field-input"
+          style={{ width: '100%', minHeight: '80px', resize: 'vertical' }}
+          placeholder="بۆ نموونە: گۆڕینی ڕۆن، فرۆشتنی تایە، پاتری..."
+          value={serviceText}
+          onChange={(e) => setServiceText(e.target.value)}
+          required
+        />
+      </section>
+      
+      <section className="form-section">
+        <h2 className="field-title">کاتی کارکردن *</h2>
+        <div style={{display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '1rem'}}>
+          <label className="choice-pill">
+            <Checkbox checked={alwaysOpen} onCheckedChange={(v) => setAlwaysOpen(!!v)} />
+            ٢٤ کاتژمێر کراوەیە
+          </label>
         </div>
+        {!alwaysOpen && (
+          <div style={{display: 'flex', gap: '1rem'}}>
+            <label className="field full">
+              کاتژمێری کرانەوە
+              <input type="time" required value={openTime} onChange={e => setOpenTime(e.target.value)} />
+            </label>
+            <label className="field full">
+              کاتژمێری داخستن
+              <input type="time" required value={closeTime} onChange={e => setCloseTime(e.target.value)} />
+            </label>
+          </div>
+        )}
       </section>
       <section className="form-section">
         <h2 className="field-title">{t.location} *</h2>

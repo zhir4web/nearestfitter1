@@ -47,7 +47,6 @@ export function Directory() {
   const [error, setError] = useState(false);
   const [query, setQuery] = useState('');
   const [type, setType] = useState('all');
-  const [service, setService] = useState('all');
   const [openOnly, setOpenOnly] = useState(false);
   const [user, setUser] = useState<[number, number]>();
   const [selected, setSelected] = useState<string>();
@@ -84,7 +83,6 @@ export function Directory() {
               .toLocaleLowerCase()
               .includes(query.toLocaleLowerCase()) &&
             (type === 'all' || f.type === type) &&
-            (service === 'all' || f.services.includes(service as never)) &&
             (!openOnly || opening(f.working_hours, now).open),
         )
         .map((f) => ({
@@ -92,7 +90,7 @@ export function Directory() {
           distance: distance(user || CENTER, [f.latitude, f.longitude]),
         }))
         .sort((a, b) => a.distance - b.distance),
-    [fitters, query, type, service, openOnly, user, now],
+    [fitters, query, type, openOnly, user, now],
   );
   function locate() {
     setLocating(true);
@@ -216,27 +214,6 @@ export function Directory() {
               <span className="live-dot" />
               {t.open}
             </button>
-            <Select
-              value={service}
-              onValueChange={(v) => setService(v || 'all')}
-            >
-              <SelectTrigger aria-label={t.services} className="service-select">
-                <SlidersHorizontal size={15} />
-                <SelectValue>
-                  {service === 'all'
-                    ? t.allServices
-                    : t.serviceLabels[service as keyof typeof t.serviceLabels]}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t.allServices}</SelectItem>
-                {services.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {t.serviceLabels[s]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
         </div>
         <div className="results-heading">
@@ -270,7 +247,6 @@ export function Directory() {
                 onClick={() => {
                   setQuery('');
                   setType('all');
-                  setService('all');
                   setOpenOnly(false);
                 }}
               >

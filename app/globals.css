@@ -1595,3 +1595,67 @@ h1 > span {
   70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
   100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
 }
+
+/* ============================================
+   PREMIUM MOBILE UI OVERRIDES (GLASSMORPHISM)
+   ============================================ */
+:root {
+  --glass-bg: rgba(18, 21, 25, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-blur: blur(20px);
+}
+
+.results-panel {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-right: 1px solid var(--glass-border);
+}
+
+.fitter-card {
+  background: rgba(27, 31, 37, 0.65);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+}
+
+.fitter-card:hover {
+  background: rgba(37, 42, 49, 0.75);
+  border-color: rgba(255, 120, 45, 0.4);
+  box-shadow: 0 8px 32px 0 rgba(255, 120, 45, 0.15);
+}
+
+.form-panel {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  border-radius: 16px;
+}
+
+.detail-panel {
+  background: var(--glass-bg) !important;
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-left: 1px solid var(--glass-border);
+}
+
+.button.primary {
+  box-shadow: 0 4px 15px rgba(255, 120, 45, 0.3);
+}
+.button.primary:hover {
+  box-shadow: 0 6px 20px rgba(255, 120, 45, 0.5);
+  transform: translateY(-2px);
+}
+
+@media (max-width: 640px) {
+  .results-panel {
+    border-right: none;
+    border-top: 1px solid var(--glass-border);
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.4);
+  }
+}
