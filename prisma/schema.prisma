@@ -1,0 +1,53 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "sqlite"
+  url = env("DATABASE_URL")
+}
+model Fitter {
+ id String @id
+ name String
+ type String
+ phone String
+ phone2 String @default("")
+ whatsapp String @default("")
+ photo_url String @default("")
+ latitude Float
+ longitude Float
+ neighborhood String
+ services Json
+ working_hours Json
+ status String @default("pending")
+ demo Boolean @default(false)
+ created_at String
+ reviews Review[]
+ @@index([status])
+ @@map("fitters")
+}
+model Review {
+ id String @id
+ fitter_id String
+ fitter Fitter @relation(fields:[fitter_id],references:[id],onDelete:Cascade)
+ reviewer_name String
+ rating Int
+ comment String
+ status String @default("pending")
+ created_at String
+ @@index([fitter_id,status])
+ @@map("reviews")
+}
+model Contact {
+ id String @id
+ name String
+ email String
+ message String
+ created_at String
+ @@map("contacts")
+}
+model RateLimit {
+ key String @id
+ count Int
+ expires BigInt
+ @@map("rate_limits")
+}
