@@ -56,24 +56,7 @@ export function Directory() {
   const [expanded, setExpanded] = useState(false);
   const [now, setNow] = useState(new Date());
   const drag = useRef(0);
-  // --- Dispatch state ---
-  type DispatchPhase =
-    | 'idle'
-    | 'requesting'
-    | 'waiting'
-    | 'accepted'
-    | 'declined'
-    | 'expired'
-    | 'no_fitters';
-  const [dispatchPhase, setDispatchPhase] = useState<DispatchPhase>('idle');
-  const [dispatchData, setDispatchData] = useState<{
-    userToken: string;
-    fitterName: string;
-    fitterPhone: string;
-    fitterWhatsapp: string;
-    whatsappUrl: string | null;
-  } | null>(null);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   async function load() {
     setLoading(true);
     setError(false);
@@ -133,54 +116,6 @@ export function Directory() {
   }
   const chosen = fitters.find((f) => f.id === selected);
 
-  // --- Dispatch helpers ---
-  function stopPolling() {
-    if (pollRef.current) {
-      clearInterval(pollRef.current);
-      pollRef.current = null;
-    }
-  }
-  async function requestDispatch() {
-    if (!user) return;
-    setDispatchPhase('requesting');
-    try {
-      const res = await fetch('/api/dispatch', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Origin: location.origin },
-        body: JSON.stringify({ user_lat: user[0], user_lng: user[1] }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        if (res.status === 404) { setDispatchPhase('no_fitters'); return; }
-        throw new Error(data.error || 'Request failed');
-      }
-      setDispatchData({
-        userToken: data.user_token,
-        fitterName: data.fitter_name,
-        fitterPhone: data.fitter_phone,
-        fitterWhatsapp: data.fitter_whatsapp,
-        whatsappUrl: data.whatsapp_url,
-      });
-      setDispatchPhase('waiting');
-      // Start polling
-      pollRef.current = setInterval(async () => {
-        try {
-          const r = await fetch(`/api/dispatch/${data.user_token}`);
-          const d = await r.json();
-          if (d.status === 'accepted') { stopPolling(); setDispatchPhase('accepted'); }
-          else if (d.status === 'declined') { stopPolling(); setDispatchPhase('declined'); }
-          else if (d.status === 'expired') { stopPolling(); setDispatchPhase('expired'); }
-        } catch { /* continue polling */ }
-      }, 5000);
-    } catch {
-      setDispatchPhase('idle');
-    }
-  }
-  function cancelDispatch() {
-    stopPolling();
-    setDispatchPhase('idle');
-    setDispatchData(null);
-  }
   return (
     <main className="directory">
       <aside className={'results-panel ' + (expanded ? 'expanded' : '')}>
@@ -237,15 +172,14 @@ export function Directory() {
           </button>
           {/* Dispatch request button */}
           {user && (
-            <button
+            <Link
+              href={`/request-help?lat=${user[0]}&lng=${user[1]}`}
               className="button dispatch-btn"
-              onClick={requestDispatch}
-              disabled={dispatchPhase === 'requesting'}
               id="request-help-btn"
             >
               <AlertTriangle size={17} />
-              {dispatchPhase === 'requesting' ? t.requesting : t.requestHelp}
-            </button>
+              {t.requestHelp}
+            </Link>
           )}
           {geoError && (
             <p className="error" role="alert">
@@ -444,133 +378,6 @@ export function Directory() {
           user={user}
           onClose={() => setSelected(undefined)}
         />
-      )}
-
-      {/* ========= DISPATCH MODAL ========= */}
-      {dispatchPhase !== 'idle' && dispatchPhase !== 'requesting' && (
-        <div className="dispatch-overlay" role="dialog" aria-modal="true">
-          <div className="dispatch-modal">
-            {/* WAITING */}
-            {dispatchPhase === 'waiting' && (
-              <>
-                <div className="dispatch-icon waiting">
-                  <span className="dispatch-pulse" />
-                  <Truck size={28} />
-                </div>
-                <h2>{t.waitingFitter}</h2>
-                <p>{t.waitingFitterSub}</p>
-                {dispatchData?.fitterName && (
-                  <div className="dispatch-fitter-info">
-                    <strong>{dispatchData.fitterName}</strong>
-                  </div>
-                )}
-                {dispatchData?.whatsappUrl && (
-                  <a
-                    href={dispatchData.whatsappUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="button dispatch-wa"
-                  >
-                    <MessageCircle size={17} />
-                    {t.sendWhatsapp}
-                  </a>
-                )}
-                {dispatchData?.fitterPhone && (
-                  <a
-                    href={`tel:${dispatchData.fitterPhone}`}
-                    className="button dispatch-call"
-                  >
-                    <Phone size={17} />
-                    {t.callFitter}
-                  </a>
-                )}
-                <button className="button dispatch-cancel" onClick={cancelDispatch}>
-                  {t.cancelRequest}
-                </button>
-              </>
-            )}
-
-            {/* ACCEPTED */}
-            {dispatchPhase === 'accepted' && (
-              <>
-                <div className="dispatch-icon accepted">
-                  <CheckCircle2 size={34} />
-                </div>
-                <h2 className="dispatch-success">{t.fitterAccepted}</h2>
-                <p>{t.fitterAcceptedSub}</p>
-                {dispatchData?.fitterName && (
-                  <div className="dispatch-fitter-info">
-                    <strong>{dispatchData.fitterName}</strong>
-                  </div>
-                )}
-                <div className="dispatch-actions">
-                  {dispatchData?.fitterPhone && (
-                    <a href={`tel:${dispatchData.fitterPhone}`} className="button primary">
-                      <Phone size={17} />
-                      {t.callFitter}
-                    </a>
-                  )}
-                  {dispatchData?.fitterWhatsapp && (
-                    <a
-                      href={`https://wa.me/${dispatchData.fitterWhatsapp.replace(/\D/g, '')}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="button dispatch-wa"
-                    >
-                      <MessageCircle size={17} />
-                      {t.sendWhatsapp}
-                    </a>
-                  )}
-                </div>
-                <button className="button dispatch-cancel" onClick={cancelDispatch}>
-                  {t.close}
-                </button>
-              </>
-            )}
-
-            {/* DECLINED */}
-            {dispatchPhase === 'declined' && (
-              <>
-                <div className="dispatch-icon declined">
-                  <XCircle size={34} />
-                </div>
-                <h2>{t.fitterDeclined}</h2>
-                <p>{t.fitterDeclinedSub}</p>
-                <button className="button primary" onClick={cancelDispatch}>
-                  {t.retry}
-                </button>
-              </>
-            )}
-
-            {/* EXPIRED */}
-            {dispatchPhase === 'expired' && (
-              <>
-                <div className="dispatch-icon declined">
-                  <XCircle size={34} />
-                </div>
-                <h2>{t.requestExpired}</h2>
-                <p>{t.requestExpiredSub}</p>
-                <button className="button primary" onClick={cancelDispatch}>
-                  {t.retry}
-                </button>
-              </>
-            )}
-
-            {/* NO FITTERS */}
-            {dispatchPhase === 'no_fitters' && (
-              <>
-                <div className="dispatch-icon declined">
-                  <AlertTriangle size={34} />
-                </div>
-                <h2>{t.noFittersOpen}</h2>
-                <p>{t.fitterDeclinedSub}</p>
-                <button className="button primary" onClick={cancelDispatch}>
-                  {t.close}
-                </button>
-              </>
-            )}
-          </div>
-        </div>
       )}
     </main>
   );

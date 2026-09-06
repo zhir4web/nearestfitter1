@@ -14,7 +14,7 @@ export async function POST(
     if (dispatch.status !== 'pending') {
       return Response.json({ error: 'Already handled' }, { status: 409 });
     }
-    await updateDispatchStatus(dispatch.id, 'accepted', new Date().toISOString());
+    await updateDispatchStatus(dispatch.id, 'accepted', { accepted_at: new Date().toISOString() });
     return Response.json({ ok: true });
   } catch (e) {
     return failure(e);

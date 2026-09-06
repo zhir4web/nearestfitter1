@@ -55,16 +55,29 @@ export type DispatchStatus =
   | 'en_route'
   | 'completed'
   | 'declined'
-  | 'expired';
+  | 'expired'
+  | 'reassigning';
 export type DispatchRequest = {
   id: string;
   fitter_id: string;
   user_lat: number;
   user_lng: number;
+  user_phone: string;
+  user_note: string;
   status: DispatchStatus;
   fitter_token: string;
   user_token: string;
+  tried_fitters: string;
+  reassign_count: number;
+  expires_at: string;
   created_at: string;
   accepted_at?: string;
+  completed_at?: string;
+};
+export type FitterDashboard = {
+  id: string;
+  fitter_id: string;
+  code: string;
+  created_at: string;
 };
 

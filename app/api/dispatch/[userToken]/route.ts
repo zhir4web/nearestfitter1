@@ -14,9 +14,8 @@ export async function GET(
     return Response.json({
       status: dispatch.status,
       fitter_name: dispatch.fitter_name,
-      fitter_phone: dispatch.fitter_phone,
-      fitter_whatsapp: dispatch.fitter_whatsapp,
-      accepted_at: dispatch.accepted_at,
+      expires_at: dispatch.expires_at,
+      reassign_count: dispatch.reassign_count,
     });
   } catch (e) {
     return failure(e);

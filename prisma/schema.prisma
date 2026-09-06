@@ -23,6 +23,7 @@ model Fitter {
  created_at String
  reviews Review[]
  dispatches DispatchRequest[]
+ dashboard FitterDashboard?
  @@index([status])
  @@map("fitters")
 }
@@ -53,18 +54,33 @@ model RateLimit {
  @@map("rate_limits")
 }
 model DispatchRequest {
- id            String  @id
- fitter_id     String
- fitter        Fitter  @relation(fields:[fitter_id],references:[id],onDelete:Cascade)
- user_lat      Float
- user_lng      Float
- status        String  @default("pending")
- fitter_token  String  @unique
- user_token    String  @unique
- created_at    String
- accepted_at   String?
+ id              String  @id
+ fitter_id       String
+ fitter          Fitter  @relation(fields:[fitter_id],references:[id],onDelete:Cascade)
+ user_lat        Float
+ user_lng        Float
+ user_phone      String
+ user_note       String  @default("")
+ status          String  @default("pending")
+ fitter_token    String  @unique
+ user_token      String  @unique
+ tried_fitters   String  @default("[]")
+ reassign_count  Int     @default(0)
+ expires_at      String
+ created_at      String
+ accepted_at     String?
+ completed_at    String?
  @@index([fitter_token])
  @@index([user_token])
  @@index([status, created_at])
  @@map("dispatch_requests")
+}
+model FitterDashboard {
+ id          String  @id
+ fitter_id   String  @unique
+ fitter      Fitter  @relation(fields:[fitter_id],references:[id],onDelete:Cascade)
+ code        String  @unique
+ created_at  String
+ @@index([code])
+ @@map("fitter_dashboards")
 }

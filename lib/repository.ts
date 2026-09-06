@@ -129,9 +129,7 @@ export async function publicFitters() {
       };
     });
 }
-export async function createDispatch(
-  data: DispatchRequest,
-): Promise<void> {
+export async function createDispatch(data: DispatchRequest): Promise<void> {
   const p = local();
   await p.dispatchRequest.create({
     data: {
@@ -139,77 +137,135 @@ export async function createDispatch(
       fitter_id: data.fitter_id,
       user_lat: data.user_lat,
       user_lng: data.user_lng,
+      user_phone: data.user_phone,
+      user_note: data.user_note,
       status: data.status,
       fitter_token: data.fitter_token,
       user_token: data.user_token,
+      tried_fitters: data.tried_fitters,
+      reassign_count: data.reassign_count,
+      expires_at: data.expires_at,
       created_at: data.created_at,
-      accepted_at: data.accepted_at ?? null,
     },
   });
 }
-export async function getDispatchByUserToken(
-  token: string,
-): Promise<(DispatchRequest & { fitter_name: string; fitter_phone: string; fitter_whatsapp: string }) | null> {
+// For user polling — never exposes user_phone or fitter contact
+export async function getDispatchByUserToken(token: string): Promise<{
+  id: string; status: string; fitter_name: string;
+  reassign_count: number; expires_at: string; created_at: string;
+} | null> {
   const p = local();
   const r = await p.dispatchRequest.findUnique({
     where: { user_token: token },
-    include: { fitter: true },
+    include: { fitter: { select: { name: true } } },
   });
   if (!r) return null;
   return {
     id: r.id,
-    fitter_id: r.fitter_id,
-    user_lat: r.user_lat,
-    user_lng: r.user_lng,
-    status: r.status as DispatchRequest['status'],
-    fitter_token: r.fitter_token,
-    user_token: r.user_token,
-    created_at: r.created_at,
-    accepted_at: r.accepted_at ?? undefined,
+    status: r.status,
     fitter_name: r.fitter.name,
-    fitter_phone: r.fitter.phone,
-    fitter_whatsapp: r.fitter.whatsapp,
+    reassign_count: r.reassign_count,
+    expires_at: r.expires_at,
+    created_at: r.created_at,
   };
 }
-export async function getDispatchByFitterToken(
-  token: string,
-): Promise<(DispatchRequest & { fitter_name: string; fitter_phone: string }) | null> {
+// For fitter dashboard — shows location but NOT user phone
+export async function getDispatchByFitterToken(token: string): Promise<{
+  id: string; user_lat: number; user_lng: number; user_note: string;
+  status: string; fitter_token: string; expires_at: string; created_at: string;
+  fitter_name: string; fitter_whatsapp: string;
+} | null> {
   const p = local();
   const r = await p.dispatchRequest.findUnique({
     where: { fitter_token: token },
-    include: { fitter: true },
+    include: { fitter: { select: { name: true, whatsapp: true } } },
   });
   if (!r) return null;
   return {
     id: r.id,
-    fitter_id: r.fitter_id,
     user_lat: r.user_lat,
     user_lng: r.user_lng,
-    status: r.status as DispatchRequest['status'],
+    user_note: r.user_note,
+    status: r.status,
     fitter_token: r.fitter_token,
-    user_token: r.user_token,
+    expires_at: r.expires_at,
     created_at: r.created_at,
-    accepted_at: r.accepted_at ?? undefined,
     fitter_name: r.fitter.name,
-    fitter_phone: r.fitter.phone,
+    fitter_whatsapp: r.fitter.whatsapp,
+  };
+}
+// For fitter dashboard page — gets pending requests for this fitter
+export async function getPendingDispatchForFitter(fitter_id: string): Promise<{
+  id: string; user_lat: number; user_lng: number; user_note: string;
+  fitter_token: string; expires_at: string; created_at: string; status: string;
+} | null> {
+  const p = local();
+  const r = await p.dispatchRequest.findFirst({
+    where: { fitter_id, status: 'pending' },
+    orderBy: { created_at: 'desc' },
+  });
+  if (!r) return null;
+  return {
+    id: r.id,
+    user_lat: r.user_lat,
+    user_lng: r.user_lng,
+    user_note: r.user_note,
+    fitter_token: r.fitter_token,
+    expires_at: r.expires_at,
+    created_at: r.created_at,
+    status: r.status,
   };
 }
 export async function updateDispatchStatus(
-  id: string,
-  status: string,
-  accepted_at?: string,
+  id: string, status: string,
+  extra?: { accepted_at?: string; completed_at?: string; tried_fitters?: string; reassign_count?: number; fitter_id?: string; fitter_token?: string; expires_at?: string },
 ): Promise<void> {
   const p = local();
-  await p.dispatchRequest.update({
+  await p.dispatchRequest.update({ where: { id }, data: { status, ...extra } });
+}
+export async function getDispatchById(id: string): Promise<(DispatchRequest & { fitter_whatsapp: string }) | null> {
+  const p = local();
+  const r = await p.dispatchRequest.findUnique({
     where: { id },
-    data: { status, ...(accepted_at ? { accepted_at } : {}) },
+    include: { fitter: { select: { whatsapp: true } } },
   });
+  if (!r) return null;
+  return {
+    id: r.id, fitter_id: r.fitter_id,
+    user_lat: r.user_lat, user_lng: r.user_lng,
+    user_phone: r.user_phone, user_note: r.user_note,
+    status: r.status as DispatchRequest['status'],
+    fitter_token: r.fitter_token, user_token: r.user_token,
+    tried_fitters: r.tried_fitters, reassign_count: r.reassign_count,
+    expires_at: r.expires_at, created_at: r.created_at,
+    accepted_at: r.accepted_at ?? undefined,
+    completed_at: r.completed_at ?? undefined,
+    fitter_whatsapp: r.fitter.whatsapp,
+  };
 }
 export async function expireOldDispatches(): Promise<void> {
   const p = local();
-  const cutoff = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+  const now = new Date().toISOString();
   await p.dispatchRequest.updateMany({
-    where: { status: 'pending', created_at: { lt: cutoff } },
+    where: { status: 'pending', expires_at: { lt: now } },
     data: { status: 'expired' },
   });
+}
+// FitterDashboard CRUD
+export async function createFitterDashboard(fitter_id: string, code: string): Promise<void> {
+  const p = local();
+  await p.fitterDashboard.create({
+    data: { id: code, fitter_id, code, created_at: new Date().toISOString() },
+  });
+}
+export async function getFitterByDashboardCode(code: string): Promise<{
+  fitter_id: string; fitter_name: string; fitter_type: string;
+} | null> {
+  const p = local();
+  const r = await p.fitterDashboard.findUnique({
+    where: { code },
+    include: { fitter: { select: { id: true, name: true, type: true, status: true } } },
+  });
+  if (!r || r.fitter.status !== 'approved') return null;
+  return { fitter_id: r.fitter.id, fitter_name: r.fitter.name, fitter_type: r.fitter.type };
 }
