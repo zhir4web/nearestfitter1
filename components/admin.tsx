@@ -200,7 +200,7 @@ export function Admin() {
               <button
                 className="button primary"
                 onClick={() => {
-                  navigator.clipboard.writeText(`${window.location.origin}/fitter/${dashCode}`);
+                  void navigator.clipboard.writeText(`${window.location.origin}/fitter/${dashCode}`);
                   setDashCode(undefined);
                 }}
               >
@@ -222,7 +222,7 @@ export function Admin() {
             onSaved={(code) => {
               setEdit(undefined);
               if (code) setDashCode(code);
-              load();
+              void load();
             }}
           />
         </>
