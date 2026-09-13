@@ -9,6 +9,11 @@ export const metadata: Metadata = {
   },
   description:
     'دووکانی فیتەر و فیتەری گەڕۆکی نزیکت لە سلێمانی بدۆزەوە. پەنچەرگیری، گۆڕینی تایە و یارمەتی لەسەر ڕێگا.',
+  manifest: '/manifest.json',
+  icons: {
+    icon: '/favicon.svg',
+    apple: '/favicon.svg',
+  },
   openGraph: {
     title: 'نزیکترین فیتەر — سلێمانی',
     description: 'فیتەرێکی نزیکت بدۆزەوە.',

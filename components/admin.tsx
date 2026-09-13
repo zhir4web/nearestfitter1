@@ -81,6 +81,20 @@ export function Admin() {
       setBusy(false);
     }
   }
+  async function logout() {
+    setBusy(true);
+    try {
+      const r = await fetch('/api/admin/session', { method: 'DELETE' });
+      if (!r.ok) throw Error();
+      setAuth(false);
+      setData({ fitters: [], reviews: [], contacts: [] });
+      setEdit(undefined);
+    } catch {
+      setError(t.error);
+    } finally {
+      setBusy(false);
+    }
+  }
   async function action(
     table: 'fitters' | 'reviews' | 'contacts',
     id: string,
@@ -105,20 +119,6 @@ export function Admin() {
       if (!r.ok) throw Error();
       setDeletion(undefined);
       await load();
-    } catch {
-      setError(t.error);
-    } finally {
-      setBusy(false);
-    }
-  }
-  async function logout() {
-    setBusy(true);
-    try {
-      const r = await fetch('/api/admin/session', { method: 'DELETE' });
-      if (!r.ok) throw Error();
-      setAuth(false);
-      setData({ fitters: [], reviews: [], contacts: [] });
-      setEdit(undefined);
     } catch {
       setError(t.error);
     } finally {

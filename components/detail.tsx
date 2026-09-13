@@ -10,6 +10,9 @@ import {
   Truck,
   X,
   Star,
+  Copy,
+  Check,
+  Share2,
 } from 'lucide-react';
 import {
   Sheet,
@@ -47,6 +50,23 @@ export function Detail({
   const [success, setSuccess] = useState(false);
   const [rating, setRating] = useState(5);
   const [now, setNow] = useState(new Date());
+  const [copied, setCopied] = useState(false);
+
+  function copyPhone() {
+    if (!f.phone) return;
+    navigator.clipboard.writeText(f.phone);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  function shareFitter() {
+    const text = `${t.shareText}\n🔧 ${f.name}\n📍 ${f.neighborhood}\n📞 ${f.phone}\n🗺️ https://www.google.com/maps/dir/?api=1&destination=${f.latitude},${f.longitude}`;
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      navigator.share({ title: f.name, text, url: window.location.href }).catch(() => {});
+    } else {
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    }
+  }
   async function load() {
     setLoadError(false);
     setLoading(true);
@@ -159,10 +179,10 @@ export function Detail({
               ({reviews.length})
             </span>
           </div>
-          {f.demo ? (
+          {f.demo && (
             <p className="demo-note">{t.demoNotice}</p>
-          ) : (
-            <div className="detail-actions">
+          )}
+          <div className="detail-actions">
               <a
                 className="button primary"
                 href={'tel:' + international(f.phone)}
@@ -172,10 +192,17 @@ export function Detail({
               </a>
               {f.whatsapp && (
                 <a
-                  className="button"
+                  className="button whatsapp-btn"
                   href={
                     'https://wa.me/' +
-                    international(f.whatsapp).replace('+', '')
+                    international(f.whatsapp).replace('+', '') +
+                    '?text=' +
+                    encodeURIComponent(
+                      t.whatsappPrefill.replace(
+                        '[NEIGHBORHOOD]',
+                        f.neighborhood || t.city,
+                      ),
+                    )
                   }
                   target="_blank"
                   rel="noopener noreferrer"
@@ -195,18 +222,35 @@ export function Detail({
               )}
               <a
                 className="button directions"
-                href={`https://maps.apple.com/?daddr=${f.latitude},${f.longitude}&dirflg=d`}
+                href={`https://www.google.com/maps/dir/?api=1&destination=${f.latitude},${f.longitude}`}
                 target="_blank"
                 rel="noopener noreferrer"
               >
                 <Navigation size={18} />
                 {t.directions}
               </a>
+              <button
+                type="button"
+                className={'button copy-action ' + (copied ? 'copied' : '')}
+                onClick={copyPhone}
+                title={t.copyPhone}
+              >
+                {copied ? <Check size={18} /> : <Copy size={18} />}
+                {copied ? t.copied : t.copyPhone}
+              </button>
+              <button
+                type="button"
+                className="button share-action"
+                onClick={shareFitter}
+                title={t.shareWhatsApp}
+              >
+                <Share2 size={18} />
+                {t.shareWhatsApp}
+              </button>
               <p className="help full" dir="ltr">
                 {f.phone}
               </p>
             </div>
-          )}
           <section className="form-section">
             <h2 className="field-title">{t.services}</h2>
             <div className="service-tags">

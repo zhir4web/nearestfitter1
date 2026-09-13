@@ -31,6 +31,7 @@ export type Fitter = {
   created_at: string;
   rating?: number;
   review_count?: number;
+  is_busy?: boolean;
 };
 export type Review = {
   id: string;

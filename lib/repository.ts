@@ -194,14 +194,14 @@ export async function getDispatchByFitterToken(token: string): Promise<{
     fitter_whatsapp: r.fitter.whatsapp,
   };
 }
-// For fitter dashboard page — gets pending requests for this fitter
+// For fitter dashboard page — gets pending OR accepted requests for this fitter
 export async function getPendingDispatchForFitter(fitter_id: string): Promise<{
   id: string; user_lat: number; user_lng: number; user_note: string;
   fitter_token: string; expires_at: string; created_at: string; status: string;
 } | null> {
   const p = local();
   const r = await p.dispatchRequest.findFirst({
-    where: { fitter_id, status: 'pending' },
+    where: { fitter_id, status: { in: ['pending', 'accepted'] } },
     orderBy: { created_at: 'desc' },
   });
   if (!r) return null;
@@ -269,3 +269,62 @@ export async function getFitterByDashboardCode(code: string): Promise<{
   if (!r || r.fitter.status !== 'approved') return null;
   return { fitter_id: r.fitter.id, fitter_name: r.fitter.name, fitter_type: r.fitter.type };
 }
+// Update fitter's live GPS location and online status
+export async function updateFitterOnlineStatus(
+  fitter_id: string,
+  is_online: boolean,
+  lat?: number,
+  lng?: number,
+): Promise<void> {
+  const p = local();
+  await p.fitterDashboard.update({
+    where: { fitter_id },
+    data: {
+      is_online,
+      current_lat: lat ?? null,
+      current_lng: lng ?? null,
+    },
+  });
+}
+// Update fitter location in an active dispatch request (for user tracking)
+export async function updateDispatchFitterLocation(
+  fitter_token: string,
+  lat: number,
+  lng: number,
+): Promise<void> {
+  const p = local();
+  await p.dispatchRequest.update({
+    where: { fitter_token },
+    data: { fitter_lat: lat, fitter_lng: lng },
+  });
+}
+// Get fitter live location from an accepted dispatch (for user polling)
+export async function getDispatchFitterLocation(user_token: string): Promise<{
+  fitter_lat: number | null;
+  fitter_lng: number | null;
+  status: string;
+  fitter_name: string;
+} | null> {
+  const p = local();
+  const r = await p.dispatchRequest.findUnique({
+    where: { user_token },
+    include: { fitter: { select: { name: true } } },
+  });
+  if (!r) return null;
+  return {
+    fitter_lat: r.fitter_lat,
+    fitter_lng: r.fitter_lng,
+    status: r.status,
+    fitter_name: r.fitter.name,
+  };
+}
+// Get active fitter IDs (to show busy badges in directory)
+export async function getActiveFitterIds(): Promise<Set<string>> {
+  const p = local();
+  const active = await p.dispatchRequest.findMany({
+    where: { status: { in: ['pending', 'accepted'] } },
+    select: { fitter_id: true },
+  });
+  return new Set(active.map((r) => r.fitter_id));
+}
+

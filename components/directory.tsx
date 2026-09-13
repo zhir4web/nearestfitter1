@@ -19,6 +19,8 @@ import {
   XCircle,
   Phone,
   MessageCircle,
+  Clock,
+  Zap,
 } from 'lucide-react';
 import { useLanguage } from './language';
 import { distance, CENTER, opening } from '@/lib/geo';
@@ -32,6 +34,20 @@ import {
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Detail } from './detail';
+
+const SULA_NEIGHBORHOODS = [
+  'all',
+  'شەقامی بازنەیی مەلیک مەحمود',
+  'سەرچنار',
+  'تووی مەلیك',
+  'بەختیاری',
+  'ڕاپەڕین',
+  'تاسڵوجە',
+  'هوانە',
+  'ئیبراهیم ئەحمەد',
+  'قالاوا',
+  'ڕزگاری',
+];
 const Map = dynamic(() => import('./map'), {
   ssr: false,
   loading: () => (
@@ -47,6 +63,9 @@ export function Directory() {
   const [error, setError] = useState(false);
   const [query, setQuery] = useState('');
   const [type, setType] = useState('all');
+  const [service, setService] = useState('all');
+  const [selectedNeighborhood, setSelectedNeighborhood] = useState('all');
+  const [is24Hours, setIs24Hours] = useState(false);
   const [openOnly, setOpenOnly] = useState(false);
   const [user, setUser] = useState<[number, number]>();
   const [selected, setSelected] = useState<string>();
@@ -83,14 +102,34 @@ export function Directory() {
               .toLocaleLowerCase()
               .includes(query.toLocaleLowerCase()) &&
             (type === 'all' || f.type === type) &&
-            (!openOnly || opening(f.working_hours, now).open),
+            (service === 'all' || (f.services ?? []).includes(service)) &&
+            (selectedNeighborhood === 'all' ||
+              (f.neighborhood || '')
+                .toLocaleLowerCase()
+                .includes(selectedNeighborhood.toLocaleLowerCase())) &&
+            (!openOnly || opening(f.working_hours, now).open) &&
+            (!is24Hours || f.working_hours?.some((h) => h.allDay)),
         )
-        .map((f) => ({
-          ...f,
-          distance: distance(user || CENTER, [f.latitude, f.longitude]),
-        }))
+        .map((f) => {
+          const dist = distance(user || CENTER, [f.latitude, f.longitude]);
+          return {
+            ...f,
+            distance: dist,
+            driveMinutes: Math.max(2, Math.ceil(dist * 2.2)),
+          };
+        })
         .sort((a, b) => a.distance - b.distance),
-    [fitters, query, type, openOnly, user, now],
+    [
+      fitters,
+      query,
+      type,
+      service,
+      selectedNeighborhood,
+      openOnly,
+      is24Hours,
+      user,
+      now,
+    ],
   );
   function locate() {
     setLocating(true);
@@ -136,6 +175,30 @@ export function Directory() {
           <span />
         </button>
         <div className="finder-intro">
+          {/* Emergency SOS Quick Card */}
+          <div className="sos-banner">
+            <div className="sos-header">
+              <span className="sos-badge">
+                <span className="sos-pulse" />
+                {t.sosBadge}
+              </span>
+            </div>
+            <h3>{t.sosTitle}</h3>
+            <p>{t.sosDesc}</p>
+            <button
+              type="button"
+              className="button sos-btn"
+              onClick={() => {
+                setType('mobile');
+                setOpenOnly(true);
+                locate();
+              }}
+            >
+              <Zap size={15} />
+              {t.sosButton}
+            </button>
+          </div>
+
           <div className="eyebrow">
             <span className="live-dot" />
             {t.city} <span className="eyebrow-line" /> ROADSIDE ASSISTANCE
@@ -205,6 +268,41 @@ export function Directory() {
               </button>
             ))}
           </div>
+          {/* فیلتەری خزمەتگوزاری */}
+          <div className="filter-chips service-chips">
+            {([
+              ['all', t.allServices],
+              ['puncture', t.serviceLabels.puncture],
+              ['change', t.serviceLabels.change],
+              ['balance', t.serviceLabels.balance],
+              ['alignment', t.serviceLabels.alignment],
+              ['sales', t.serviceLabels.sales],
+              ['roadside', t.serviceLabels.roadside],
+            ] as [string, string][]).map(([v, label]) => (
+              <button
+                key={v}
+                className={service === v ? 'active' : ''}
+                aria-pressed={service === v}
+                onClick={() => setService(v)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          {/* فیلتەری گەڕەکەکانی سلێمانی */}
+          <div className="filter-chips neighborhood-chips" aria-label={t.neighborhoods}>
+            {SULA_NEIGHBORHOODS.map((nh) => (
+              <button
+                key={nh}
+                className={selectedNeighborhood === nh ? 'active' : ''}
+                aria-pressed={selectedNeighborhood === nh}
+                onClick={() => setSelectedNeighborhood(nh)}
+              >
+                <MapPin size={12} />
+                {nh === 'all' ? t.allAreas : nh}
+              </button>
+            ))}
+          </div>
           <div className="filter-row">
             <button
               className={'open-chip ' + (openOnly ? 'active' : '')}
@@ -213,6 +311,14 @@ export function Directory() {
             >
               <span className="live-dot" />
               {t.open}
+            </button>
+            <button
+              className={'open-chip ' + (is24Hours ? 'active' : '')}
+              aria-pressed={is24Hours}
+              onClick={() => setIs24Hours(!is24Hours)}
+            >
+              <Clock size={13} />
+              {t.hours24}
             </button>
           </div>
         </div>
@@ -247,7 +353,10 @@ export function Directory() {
                 onClick={() => {
                   setQuery('');
                   setType('all');
+                  setService('all');
+                  setSelectedNeighborhood('all');
                   setOpenOnly(false);
+                  setIs24Hours(false);
                 }}
               >
                 {t.clear}
@@ -255,24 +364,40 @@ export function Directory() {
             </div>
           ) : (
             filtered.map((f, i) => (
-              <button
+              <div
                 key={f.id}
+                role="button"
+                tabIndex={0}
                 onClick={() => setSelected(f.id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setSelected(f.id);
+                  }
+                }}
                 className={
-                  'fitter-card ' + (user && i < 5 ? 'nearest-card' : '')
+                  'fitter-card ' +
+                  (user && i < 5 ? 'nearest-card ' : '') +
+                  f.type +
+                  (f.is_busy ? ' busy-card' : '')
                 }
               >
                 <div className={'fitter-symbol ' + f.type}>
                   {f.type === 'mobile' ? (
-                    <Truck size={27} />
+                    <Truck size={26} />
                   ) : (
-                    <Store size={27} />
+                    <Store size={26} />
                   )}
                 </div>
                 <div className="card-main">
                   <div className="card-title">
                     <h3>{f.name}</h3>
                     {f.demo && <span className="demo-tag">{t.demo}</span>}
+                    {f.is_busy ? (
+                      <span className="busy-badge">🔴 مەشخوڵە</span>
+                    ) : opening(f.working_hours, now).open ? (
+                      <span className="available-badge">✅ بەردەستە</span>
+                    ) : null}
                   </div>
                   <p>
                     <MapPin size={13} />
@@ -290,6 +415,9 @@ export function Directory() {
                       {opening(f.working_hours, now).open ? t.open : t.closed}
                     </span>
                     <span>{t[f.type]}</span>
+                    {f.working_hours?.some((h) => h.allDay) && (
+                      <span className="badge-24h">24/7</span>
+                    )}
                   </div>
                   <div className="card-bottom">
                     <span className="rating">
@@ -299,15 +427,69 @@ export function Directory() {
                     </span>
                     <span className="distance">
                       {f.distance.toFixed(1)} {user ? t.away : t.km}
+                      <small className="drive-time">
+                        {' '}
+                        · ~{f.driveMinutes} {t.estimatedDrive}
+                      </small>
                     </span>
                     {lang === 'en' ? (
-                      <ArrowUpRight size={19} />
+                      <ArrowUpRight size={18} />
                     ) : (
-                      <ArrowUpLeft size={19} />
+                      <ArrowUpLeft size={18} />
                     )}
                   </div>
+
+                  {/* 1-Tap Quick Action Buttons */}
+                  {f.phone && (
+                    <div className="card-quick-actions">
+                      <a
+                        href={'tel:' + f.phone}
+                        className="quick-action-btn call"
+                        onClick={(e) => e.stopPropagation()}
+                        title={t.quickCall}
+                      >
+                        <Phone size={13} />
+                        <span>{t.quickCall}</span>
+                      </a>
+                      {f.whatsapp && (
+                        <a
+                          href={
+                            'https://wa.me/' +
+                            f.whatsapp.replace(/[^0-9]/g, '') +
+                            '?text=' +
+                            encodeURIComponent(
+                              t.whatsappPrefill.replace(
+                                '[NEIGHBORHOOD]',
+                                f.neighborhood || t.city,
+                              ),
+                            )
+                          }
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="quick-action-btn whatsapp"
+                          onClick={(e) => e.stopPropagation()}
+                          title={t.quickWhatsApp}
+                        >
+                          <MessageCircle size={13} />
+                          <span>{t.quickWhatsApp}</span>
+                        </a>
+                      )}
+                      {/* Direct dispatch button (only if user location known + fitter open + not busy) */}
+                      {user && !f.is_busy && opening(f.working_hours, now).open && !f.demo && (
+                        <Link
+                          href={`/request-help?lat=${user[0]}&lng=${user[1]}`}
+                          className="quick-action-btn dispatch"
+                          onClick={(e) => e.stopPropagation()}
+                          title={t.requestHelp}
+                        >
+                          <AlertTriangle size={13} />
+                          <span>{t.requestHelp}</span>
+                        </Link>
+                      )}
+                    </div>
+                  )}
                 </div>
-              </button>
+              </div>
             ))
           )}
           <div className="directory-links">

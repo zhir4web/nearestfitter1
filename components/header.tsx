@@ -35,6 +35,10 @@ export function Header() {
           <MapPin size={15} />
           {t.city}
         </span>
+        <Link href="/fitter/add" className="button add-link">
+          <Plus size={17} />
+          <span>{t.add}</span>
+        </Link>
         <div className="languages" aria-label={t.language}>
           {(['ckb', 'en', 'ar'] as const).map((l) => (
             <button

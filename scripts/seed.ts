@@ -1,58 +1,428 @@
 import { PrismaClient } from '@prisma/client';
 import { createClient } from '@supabase/supabase-js';
-const samples = [
-  ['فیتەری شەقامی سالم', 'شەقامی سالم / Salim Street', 35.5575, 45.432],
-  ['فیتەری سەرچنار', 'سەرچنار / Sarchinar', 35.586, 45.389],
-  ['فیتەری مەلیک مەحمود', 'مەلیک مەحمود / Malik Mahmud', 35.549, 45.47],
-  ['فیتەری ڕاپەڕین', 'ڕاپەڕین / Raparin', 35.589, 45.443],
-  ['فیتەری بەختیاری', 'بەختیاری / Bakhtiary', 35.575, 45.419],
-  ['فیتەری زەرگەتە', 'زەرگەتە / Zargata', 35.539, 45.439],
-  ['فیتەری گەڕۆکی سلێمانی', 'ناوەندی شار / City center', 35.563, 45.432],
-  ['فیتەری گەڕۆکی سەرچنار', 'سەرچنار / Sarchinar', 35.577, 45.4],
-  ['فیتەری گەڕۆکی ڕاپەڕین', 'ڕاپەڕین / Raparin', 35.582, 45.458],
-] as const;
-const data = samples.map((s, i) => ({
-  id: `demo-${i + 1}`,
-  name: s[0],
-  neighborhood: s[1],
-  latitude: s[2],
-  longitude: s[3],
-  type: i >= 6 ? 'mobile' : 'fixed',
-  phone: '+9640000000000',
-  phone2: '',
-  whatsapp: '',
-  photo_url: '',
-  services:
-    i >= 6
-      ? ['puncture', 'change', 'roadside']
-      : i % 2
-        ? ['puncture', 'change', 'balance', 'sales']
-        : ['puncture', 'change', 'alignment'],
-  working_hours: Array.from({ length: 7 }, (_, day) => ({
-    closed: day === 5 && i < 3,
-    allDay: i >= 6,
-    open: '08:00',
-    close: '22:00',
-  })),
-  status: 'approved',
-  demo: true,
-  created_at: new Date().toISOString(),
-}));
-if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-  const s = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY,
-  );
-  const { error } = await s
-    .from('fitters')
-    .upsert(data, { onConflict: 'id', ignoreDuplicates: true });
-  if (error) throw error;
-} else {
-  const p = new PrismaClient();
-  for (const f of data)
-    await p.fitter.upsert({ where: { id: f.id }, create: f, update: {} });
-  await p.$disconnect();
+
+const mockFitters = [
+  {
+    id: 'fitter-1',
+    name: 'فیتەری مەلیک مەحمود (٢٤ کاتژمێر)',
+    neighborhood: 'شەقامی بازنەیی مەلیک مەحمود',
+    latitude: 35.5492,
+    longitude: 45.4695,
+    type: 'fixed' as const,
+    phone: '07701548899',
+    phone2: '07501548899',
+    whatsapp: '07701548899',
+    photo_url: '',
+    services: ['puncture', 'change', 'balance', 'sales', 'roadside'],
+    working_hours: Array.from({ length: 7 }, () => ({
+      closed: false,
+      allDay: true,
+      open: '00:00',
+      close: '23:59',
+    })),
+    status: 'approved',
+    demo: false,
+    created_at: new Date().toISOString(),
+    reviews: [
+      {
+        id: 'rev-1-1',
+        reviewer_name: 'ئاکۆ عەلی',
+        rating: 5,
+        comment: 'ئیشیان زۆر پاکە و بە شەویش کراوەن، لە کاتی پەلەدا زۆر بەسوود بوون.',
+        status: 'approved',
+        created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
+      },
+      {
+        id: 'rev-1-2',
+        reviewer_name: 'ڕێباز حەمە',
+        rating: 5,
+        comment: 'تایەی کوالێتی بەرزیان هەیە و باڵانسیان زۆر وردە.',
+        status: 'approved',
+        created_at: new Date(Date.now() - 86400000 * 5).toISOString(),
+      },
+    ],
+  },
+  {
+    id: 'fitter-2',
+    name: 'فیتەری هیمداد سەرچنار',
+    neighborhood: 'سەرچنار',
+    latitude: 35.5862,
+    longitude: 45.3891,
+    type: 'fixed' as const,
+    phone: '07503321144',
+    phone2: '',
+    whatsapp: '07503321144',
+    photo_url: '',
+    services: ['puncture', 'change', 'balance', 'alignment'],
+    working_hours: Array.from({ length: 7 }, (_, d) => ({
+      closed: d === 5,
+      allDay: false,
+      open: '08:00',
+      close: '23:00',
+    })),
+    status: 'approved',
+    demo: false,
+    created_at: new Date().toISOString(),
+    reviews: [
+      {
+        id: 'rev-2-1',
+        reviewer_name: 'دانا مەحمود',
+        rating: 5,
+        comment: 'وەستایەکی بە ئەزموون و دەستپاکە، خێرا کارەکەی تەواو کرد.',
+        status: 'approved',
+        created_at: new Date(Date.now() - 86400000 * 3).toISOString(),
+      },
+    ],
+  },
+  {
+    id: 'fitter-3',
+    name: 'فریاگوزاری گەڕۆکی سەرچنار و بەختیاری',
+    neighborhood: 'سەرچنار',
+    latitude: 35.578,
+    longitude: 45.398,
+    type: 'mobile' as const,
+    phone: '07718902233',
+    phone2: '',
+    whatsapp: '07718902233',
+    photo_url: '',
+    services: ['puncture', 'change', 'roadside'],
+    working_hours: Array.from({ length: 7 }, () => ({
+      closed: false,
+      allDay: true,
+      open: '00:00',
+      close: '23:59',
+    })),
+    status: 'approved',
+    demo: false,
+    created_at: new Date().toISOString(),
+    reviews: [
+      {
+        id: 'rev-3-1',
+        reviewer_name: 'هەندرێن فەریق',
+        rating: 5,
+        comment: 'لە نزیک سەرچنار تایەم تەقی، بە ١٠ خولەک بە ماتۆڕ و ئامێرەوە گەیشتە لام.',
+        status: 'approved',
+        created_at: new Date(Date.now() - 86400000).toISOString(),
+      },
+    ],
+  },
+  {
+    id: 'fitter-4',
+    name: 'ناوەندی تایە و فیتەری تووی مەلیك',
+    neighborhood: 'تووی مەلیك',
+    latitude: 35.568,
+    longitude: 45.435,
+    type: 'fixed' as const,
+    phone: '07514456677',
+    phone2: '',
+    whatsapp: '07514456677',
+    photo_url: '',
+    services: ['puncture', 'change', 'balance', 'sales'],
+    working_hours: Array.from({ length: 7 }, () => ({
+      closed: false,
+      allDay: false,
+      open: '08:30',
+      close: '22:00',
+    })),
+    status: 'approved',
+    demo: false,
+    created_at: new Date().toISOString(),
+    reviews: [
+      {
+        id: 'rev-4-1',
+        reviewer_name: 'سەردار قادر',
+        rating: 4,
+        comment: 'کارمەندەکانیان ڕێزدارن، نرخی گۆڕینی تایەیان زۆر باشە.',
+        status: 'approved',
+        created_at: new Date(Date.now() - 86400000 * 7).toISOString(),
+      },
+    ],
+  },
+  {
+    id: 'fitter-5',
+    name: 'فیتەری هۆزان بەختیاری',
+    neighborhood: 'بەختیاری',
+    latitude: 35.5752,
+    longitude: 45.419,
+    type: 'fixed' as const,
+    phone: '07704567890',
+    phone2: '',
+    whatsapp: '07704567890',
+    photo_url: '',
+    services: ['puncture', 'change', 'alignment', 'balance'],
+    working_hours: Array.from({ length: 7 }, () => ({
+      closed: false,
+      allDay: false,
+      open: '08:00',
+      close: '21:30',
+    })),
+    status: 'approved',
+    demo: false,
+    created_at: new Date().toISOString(),
+    reviews: [
+      {
+        id: 'rev-5-1',
+        reviewer_name: 'شوان ئەحمەد',
+        rating: 5,
+        comment: 'ڕێکخستنی ویڵی کۆمپیوتەرییان زۆر وردە.',
+        status: 'approved',
+        created_at: new Date(Date.now() - 86400000 * 4).toISOString(),
+      },
+    ],
+  },
+  {
+    id: 'fitter-6',
+    name: 'فیتەری ڕاپەڕین ئۆتۆ',
+    neighborhood: 'ڕاپەڕین',
+    latitude: 35.589,
+    longitude: 45.443,
+    type: 'fixed' as const,
+    phone: '07509876543',
+    phone2: '',
+    whatsapp: '07509876543',
+    photo_url: '',
+    services: ['puncture', 'change', 'sales', 'balance'],
+    working_hours: Array.from({ length: 7 }, () => ({
+      closed: false,
+      allDay: false,
+      open: '08:00',
+      close: '22:00',
+    })),
+    status: 'approved',
+    demo: false,
+    created_at: new Date().toISOString(),
+    reviews: [
+      {
+        id: 'rev-6-1',
+        reviewer_name: 'کاروان ساڵح',
+        rating: 5,
+        comment: 'تایەی نوێیان لێ کڕی زۆر ڕازی بووم.',
+        status: 'approved',
+        created_at: new Date(Date.now() - 86400000 * 6).toISOString(),
+      },
+    ],
+  },
+  {
+    id: 'fitter-7',
+    name: 'فیتەری گەڕۆکی ڕاپەڕین و تاسڵوجە (SOS)',
+    neighborhood: 'ڕاپەڕین',
+    latitude: 35.5835,
+    longitude: 45.452,
+    type: 'mobile' as const,
+    phone: '07721123344',
+    phone2: '',
+    whatsapp: '07721123344',
+    photo_url: '',
+    services: ['puncture', 'change', 'roadside'],
+    working_hours: Array.from({ length: 7 }, () => ({
+      closed: false,
+      allDay: true,
+      open: '00:00',
+      close: '23:59',
+    })),
+    status: 'approved',
+    demo: false,
+    created_at: new Date().toISOString(),
+    reviews: [
+      {
+        id: 'rev-7-1',
+        reviewer_name: 'بەهمەن جەمال',
+        rating: 5,
+        comment: 'لە ڕێگای تاسڵوجە کاتژمێر ١ی شەو یارمەتیان دام، سوپاسیان دەکەم.',
+        status: 'approved',
+        created_at: new Date(Date.now() - 86400000 * 1).toISOString(),
+      },
+    ],
+  },
+  {
+    id: 'fitter-8',
+    name: 'فیتەری گەورەی تاسڵوجە',
+    neighborhood: 'تاسڵوجە',
+    latitude: 35.605,
+    longitude: 45.335,
+    type: 'fixed' as const,
+    phone: '07708899001',
+    phone2: '',
+    whatsapp: '07708899001',
+    photo_url: '',
+    services: ['puncture', 'change', 'sales', 'roadside', 'balance'],
+    working_hours: Array.from({ length: 7 }, () => ({
+      closed: false,
+      allDay: false,
+      open: '07:00',
+      close: '23:00',
+    })),
+    status: 'approved',
+    demo: false,
+    created_at: new Date().toISOString(),
+    reviews: [
+      {
+        id: 'rev-8-1',
+        reviewer_name: 'عومەر کەریم',
+        rating: 4,
+        comment: 'شوێنێکی گەورەیە و بۆ هەموو جۆرە ئۆتۆمبێلێک دەست دەدات.',
+        status: 'approved',
+        created_at: new Date(Date.now() - 86400000 * 8).toISOString(),
+      },
+    ],
+  },
+  {
+    id: 'fitter-9',
+    name: 'ناوەندی تایەی پیشەسازی هوانە',
+    neighborhood: 'هوانە',
+    latitude: 35.526,
+    longitude: 45.485,
+    type: 'fixed' as const,
+    phone: '07501239876',
+    phone2: '',
+    whatsapp: '07501239876',
+    photo_url: '',
+    services: ['puncture', 'change', 'balance', 'alignment', 'sales'],
+    working_hours: Array.from({ length: 7 }, (_, d) => ({
+      closed: d === 5,
+      allDay: false,
+      open: '08:00',
+      close: '20:00',
+    })),
+    status: 'approved',
+    demo: false,
+    created_at: new Date().toISOString(),
+    reviews: [
+      {
+        id: 'rev-9-1',
+        reviewer_name: 'پشتیوان نوری',
+        rating: 5,
+        comment: 'بەهێزترین ناوەندی پیشەسازی تایە لە هوانە.',
+        status: 'approved',
+        created_at: new Date(Date.now() - 86400000 * 10).toISOString(),
+      },
+    ],
+  },
+  {
+    id: 'fitter-10',
+    name: 'فیتەری ئیبراهیم ئەحمەد',
+    neighborhood: 'ئیبراهیم ئەحمەد',
+    latitude: 35.565,
+    longitude: 45.455,
+    type: 'fixed' as const,
+    phone: '07715567788',
+    phone2: '',
+    whatsapp: '07715567788',
+    photo_url: '',
+    services: ['puncture', 'change', 'balance'],
+    working_hours: Array.from({ length: 7 }, () => ({
+      closed: false,
+      allDay: false,
+      open: '08:30',
+      close: '22:00',
+    })),
+    status: 'approved',
+    demo: false,
+    created_at: new Date().toISOString(),
+    reviews: [],
+  },
+  {
+    id: 'fitter-11',
+    name: 'فیتەری قالاوا بۆ تایە و پەنچەر',
+    neighborhood: 'قالاوا',
+    latitude: 35.538,
+    longitude: 45.458,
+    type: 'fixed' as const,
+    phone: '07507788990',
+    phone2: '',
+    whatsapp: '07507788990',
+    photo_url: '',
+    services: ['puncture', 'change', 'balance'],
+    working_hours: Array.from({ length: 7 }, () => ({
+      closed: false,
+      allDay: false,
+      open: '08:00',
+      close: '21:00',
+    })),
+    status: 'approved',
+    demo: false,
+    created_at: new Date().toISOString(),
+    reviews: [],
+  },
+  {
+    id: 'fitter-12',
+    name: 'فریاگوزاری بەپەلەی بازنەیی مەلیک مەحمود (SOS)',
+    neighborhood: 'شەقامی بازنەیی مەلیک مەحمود',
+    latitude: 35.561,
+    longitude: 45.441,
+    type: 'mobile' as const,
+    phone: '07703345566',
+    phone2: '',
+    whatsapp: '07703345566',
+    photo_url: '',
+    services: ['puncture', 'change', 'roadside'],
+    working_hours: Array.from({ length: 7 }, () => ({
+      closed: false,
+      allDay: true,
+      open: '00:00',
+      close: '23:59',
+    })),
+    status: 'approved',
+    demo: false,
+    created_at: new Date().toISOString(),
+    reviews: [
+      {
+        id: 'rev-12-1',
+        reviewer_name: 'هیوا غەفوور',
+        rating: 5,
+        comment: 'بە ڕاستی شایەنی دەستخۆشین، بە خێرایی هاتن و پەنچەرەکەیان چاک کرد.',
+        status: 'approved',
+        created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
+      },
+    ],
+  },
+];
+
+async function runSeed() {
+  if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    const s = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY,
+    );
+    for (const item of mockFitters) {
+      const { reviews, ...fitterData } = item;
+      await s.from('fitters').upsert(fitterData, { onConflict: 'id' });
+      if (reviews?.length) {
+        await s.from('reviews').upsert(
+          reviews.map((r) => ({ ...r, fitter_id: item.id })),
+          { onConflict: 'id' },
+        );
+      }
+    }
+  } else {
+    const p = new PrismaClient();
+    // Clear existing demo fitters first
+    await p.review.deleteMany({});
+    await p.fitter.deleteMany({});
+
+    for (const item of mockFitters) {
+      const { reviews, ...fitterData } = item;
+      await p.fitter.create({
+        data: fitterData,
+      });
+      if (reviews?.length) {
+        for (const r of reviews) {
+          await p.review.create({
+            data: {
+              ...r,
+              fitter_id: item.id,
+            },
+          });
+        }
+      }
+    }
+    await p.$disconnect();
+  }
+
+  console.log(`Successfully seeded ${mockFitters.length} realistic fitters with reviews across Sulaymaniyah!`);
 }
-console.log(
-  '9 clearly labeled demo fitters seeded. No working contact numbers.',
-);
+
+runSeed().catch((err) => {
+  console.error('Seed error:', err);
+  process.exit(1);
+});

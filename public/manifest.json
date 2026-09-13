@@ -1,0 +1,19 @@
+{
+  "name": "نزیکترین فیتەر — فیتەردۆزی لە سلێمانی",
+  "short_name": "فیتەر",
+  "description": "دووکانی فیتەر و فیتەری گەڕۆکی نزیکت لە سلێمانی بدۆزەوە. پەنچەرگیری، گۆڕینی تایە و فریاگوزاری لەسەر ڕێگا.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0e0f12",
+  "theme_color": "#ff782d",
+  "lang": "ckb",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

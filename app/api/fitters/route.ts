@@ -1,12 +1,18 @@
 import { randomUUID } from 'node:crypto';
-import { publicFitters, insert } from '@/lib/repository';
+import { publicFitters, insert, getActiveFitterIds } from '@/lib/repository';
 import { sameOrigin, rate, failure, formBody, HttpError } from '@/lib/security';
 import { fitterSchema } from '@/lib/validation';
 import { savePhoto, removePhoto } from '@/lib/photos';
 export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
-    return Response.json(await publicFitters());
+    const [fitters, busyIds] = await Promise.all([
+      publicFitters(),
+      getActiveFitterIds(),
+    ]);
+    return Response.json(
+      fitters.map((f) => ({ ...f, is_busy: busyIds.has(f.id) })),
+    );
   } catch (e) {
     return failure(e);
   }

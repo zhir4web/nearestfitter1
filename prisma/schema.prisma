@@ -70,6 +70,8 @@ model DispatchRequest {
  created_at      String
  accepted_at     String?
  completed_at    String?
+ fitter_lat      Float?
+ fitter_lng      Float?
  @@index([fitter_token])
  @@index([user_token])
  @@index([status, created_at])
@@ -81,6 +83,9 @@ model FitterDashboard {
  fitter      Fitter  @relation(fields:[fitter_id],references:[id],onDelete:Cascade)
  code        String  @unique
  created_at  String
+ is_online   Boolean @default(false)
+ current_lat Float?
+ current_lng Float?
  @@index([code])
  @@map("fitter_dashboards")
 }
