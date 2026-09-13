@@ -30,6 +30,7 @@ export async function rows<T extends Row>(table: Table): Promise<T[]> {
     return data as T[];
   }
   const p = local();
+  if (!p) return [];
   const data =
     table === 'fitters'
       ? await p.fitter.findMany({ orderBy: { created_at: 'desc' } })
@@ -48,6 +49,7 @@ export async function insert(table: Table, data: Row) {
     return;
   }
   const p = local();
+  if (!p) return;
   if (table === 'fitters')
     await p.fitter.create({ data: data as Prisma.FitterCreateInput });
   else if (table === 'reviews')
@@ -62,6 +64,7 @@ export async function update(table: Table, id: string, data: Partial<Row>) {
     return;
   }
   const p = local();
+  if (!p) return;
   if (table === 'fitters')
     await p.fitter.update({
       where: { id },
@@ -86,6 +89,7 @@ export async function remove(table: Table, id: string) {
     return;
   }
   const p = local();
+  if (!p) return;
   if (table === 'fitters') await p.fitter.delete({ where: { id } });
   else if (table === 'reviews') await p.review.delete({ where: { id } });
   else await p.contact.delete({ where: { id } });
@@ -104,6 +108,7 @@ export async function hitLimit(key: string, max: number, windowMs: number) {
     return Number(data) > max;
   }
   const p = local();
+  if (!p) return false;
   const result = await p.$queryRaw<
     { count: number }[]
   >`INSERT INTO rate_limits (key,count,expires) VALUES (${key},1,${BigInt(expires)}) ON CONFLICT(key) DO UPDATE SET count=CASE WHEN expires<${BigInt(now)} THEN 1 ELSE count+1 END, expires=CASE WHEN expires<${BigInt(now)} THEN ${BigInt(expires)} ELSE expires END RETURNING count`;

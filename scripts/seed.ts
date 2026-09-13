@@ -386,7 +386,7 @@ async function runSeed() {
     );
     for (const item of mockFitters) {
       const { reviews, ...fitterData } = item;
-      await s.from('fitters').upsert(fitterData, { onConflict: 'id' });
+      await s.from('fitters').upsert(fitterData as any, { onConflict: 'id' });
       if (reviews?.length) {
         await s.from('reviews').upsert(
           reviews.map((r) => ({ ...r, fitter_id: item.id })),
