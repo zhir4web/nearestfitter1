@@ -40,6 +40,7 @@ export function Admin() {
     id: string;
   }>();
   const [tab, setTab] = useState('fitters');
+  const [dashCode, setDashCode] = useState<string>();
   async function load() {
     setLoading(true);
     setError('');
@@ -117,6 +118,10 @@ export function Admin() {
         },
       );
       if (!r.ok) throw Error();
+      if (table === 'fitters' && action === 'approve') {
+        const resData = await r.json().catch(() => ({}));
+        if (resData.dashboard_code) setDashCode(resData.dashboard_code);
+      }
       setDeletion(undefined);
       await load();
     } catch {
@@ -179,6 +184,32 @@ export function Admin() {
           {error}
         </p>
       )}
+      {dashCode && (
+        <div className="success flex gap-4 items-center mb-6" role="alert">
+          <ShieldCheck size={30} />
+          <div className="flex-1">
+            <strong>داشبۆردی فیتەر دروستکرا!</strong>
+            <div className="flex gap-2 mt-2">
+              <input
+                type="text"
+                readOnly
+                value={`${typeof window !== 'undefined' ? window.location.origin : ''}/fitter/${dashCode}`}
+                className="flex-1 p-2 border rounded"
+                onFocus={(e) => e.target.select()}
+              />
+              <button
+                className="button primary"
+                onClick={() => {
+                  navigator.clipboard.writeText(`${window.location.origin}/fitter/${dashCode}`);
+                  setDashCode(undefined);
+                }}
+              >
+                کۆپی لینک
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {edit ? (
         <>
           <h2 className="field-title">
@@ -188,8 +219,9 @@ export function Admin() {
             initial={edit === 'new' ? undefined : edit}
             admin
             onCancel={() => setEdit(undefined)}
-            onSaved={() => {
+            onSaved={(code) => {
               setEdit(undefined);
+              if (code) setDashCode(code);
               load();
             }}
           />

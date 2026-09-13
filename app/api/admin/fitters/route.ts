@@ -47,16 +47,18 @@ export async function POST(req: Request) {
       photo_url: photo || (raw.removePhoto ? '' : existing?.photo_url || ''),
       created_at: existing?.created_at || new Date().toISOString(),
     };
-    if (existing) await update('fitters', id, record);
-    else {
+    let dashboard_code: string | undefined;
+    if (existing) {
+      await update('fitters', id, record);
+    } else {
       await insert('fitters', record);
       // Auto-create dashboard for new fitters (approved or pending)
-      const code = newDashboardCode();
-      try { await createFitterDashboard(id, code); } catch { /* non-fatal */ }
+      dashboard_code = newDashboardCode();
+      try { await createFitterDashboard(id, dashboard_code); } catch { /* non-fatal */ }
     }
     if (existing?.photo_url && existing.photo_url !== record.photo_url)
       await removePhoto(existing.photo_url);
-    return Response.json({ id });
+    return Response.json({ id, dashboard_code });
   } catch (e) {
     if (photo) await removePhoto(photo);
     return failure(e);

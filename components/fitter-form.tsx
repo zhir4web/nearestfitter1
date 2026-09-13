@@ -27,7 +27,7 @@ export function FitterForm({
 }: {
   initial?: Fitter;
   admin?: boolean;
-  onSaved?: () => void;
+  onSaved?: (code?: string) => void;
   onCancel?: () => void;
 }) {
   const { t } = useLanguage();
@@ -103,11 +103,16 @@ export function FitterForm({
         method: 'POST',
         body,
       });
-      if (!r.ok) {
-        const resData = await r.json().catch(() => ({}));
-        throw new Error(resData.error || t.error);
+      let dashCode: string | undefined;
+      if (r.headers.get('content-type')?.includes('application/json')) {
+        const resData = await r.json();
+        if (!r.ok) throw new Error(resData.error || t.error);
+        dashCode = resData.dashboard_code;
+      } else {
+        if (!r.ok) throw new Error(t.error);
       }
-      if (admin) onSaved?.();
+      
+      if (admin) onSaved?.(dashCode);
       else setSuccess(true);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : t.error;
