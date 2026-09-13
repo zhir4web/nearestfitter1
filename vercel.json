@@ -1,6 +1,6 @@
 {
-  "env": {
-    "ADMIN_PASSWORD_HASH": "9837985cb9c99c74061eb9f5d6263eb9:3999deeb978a1669a71c8cc17f180277500d0156cefe865b672dbcc70d71271728523bddd617dd8165e0583b8d0ad2cadb892f7ab96cf504b026c5304e520f73",
-    "SESSION_SECRET": "ab7f446afe742d4b4e45bf614f1c79f181894a0438166b56b2cf1fcc55c668b75b790631700e3b8eba80f3c374c666b5"
-  }
+  "framework": "nextjs",
+  "crons": [
+    { "path": "/api/cron/cleanup", "schedule": "0 * * * *" }
+  ]
 }

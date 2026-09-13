@@ -21,7 +21,7 @@ const mockFitters = [
       close: '23:59',
     })),
     status: 'approved',
-    demo: false,
+    demo: true,
     created_at: new Date().toISOString(),
     reviews: [
       {
@@ -61,7 +61,7 @@ const mockFitters = [
       close: '23:00',
     })),
     status: 'approved',
-    demo: false,
+    demo: true,
     created_at: new Date().toISOString(),
     reviews: [
       {
@@ -93,7 +93,7 @@ const mockFitters = [
       close: '23:59',
     })),
     status: 'approved',
-    demo: false,
+    demo: true,
     created_at: new Date().toISOString(),
     reviews: [
       {
@@ -125,7 +125,7 @@ const mockFitters = [
       close: '22:00',
     })),
     status: 'approved',
-    demo: false,
+    demo: true,
     created_at: new Date().toISOString(),
     reviews: [
       {
@@ -157,7 +157,7 @@ const mockFitters = [
       close: '21:30',
     })),
     status: 'approved',
-    demo: false,
+    demo: true,
     created_at: new Date().toISOString(),
     reviews: [
       {
@@ -189,7 +189,7 @@ const mockFitters = [
       close: '22:00',
     })),
     status: 'approved',
-    demo: false,
+    demo: true,
     created_at: new Date().toISOString(),
     reviews: [
       {
@@ -221,7 +221,7 @@ const mockFitters = [
       close: '23:59',
     })),
     status: 'approved',
-    demo: false,
+    demo: true,
     created_at: new Date().toISOString(),
     reviews: [
       {
@@ -253,7 +253,7 @@ const mockFitters = [
       close: '23:00',
     })),
     status: 'approved',
-    demo: false,
+    demo: true,
     created_at: new Date().toISOString(),
     reviews: [
       {
@@ -285,7 +285,7 @@ const mockFitters = [
       close: '20:00',
     })),
     status: 'approved',
-    demo: false,
+    demo: true,
     created_at: new Date().toISOString(),
     reviews: [
       {
@@ -317,7 +317,7 @@ const mockFitters = [
       close: '22:00',
     })),
     status: 'approved',
-    demo: false,
+    demo: true,
     created_at: new Date().toISOString(),
     reviews: [],
   },
@@ -340,7 +340,7 @@ const mockFitters = [
       close: '21:00',
     })),
     status: 'approved',
-    demo: false,
+    demo: true,
     created_at: new Date().toISOString(),
     reviews: [],
   },
@@ -363,7 +363,7 @@ const mockFitters = [
       close: '23:59',
     })),
     status: 'approved',
-    demo: false,
+    demo: true,
     created_at: new Date().toISOString(),
     reviews: [
       {

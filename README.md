@@ -17,6 +17,8 @@ Open http://127.0.0.1:3000. The prepared workspace already has a local database 
 
 `setup` asks for a password of at least 12 characters, stores only a salted scrypt hash, and generates a random session secret. The terminal prompt is visible; run it in a private terminal. `npm run password` prints a new hash to put in `ADMIN_PASSWORD_HASH`. Rotate `SESSION_SECRET` at the same time to invalidate existing sessions. Restart after changing server environment variables.
 
+> **CRITICAL SECURITY NOTE**: Never hardcode `ADMIN_PASSWORD_HASH` or `SESSION_SECRET` in `vercel.json` or `.env` files that get committed to git. Always use Vercel's Environment Variables dashboard (Project Settings → Environment Variables) to set these values for production.
+
 ```sh
 npm run build
 npm start

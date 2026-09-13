@@ -4,7 +4,8 @@ import {
   updateDispatchFitterLocation,
   getPendingDispatchForFitter,
 } from '@/lib/repository';
-import { jsonBody, sameOrigin, failure } from '@/lib/security';
+import { jsonBody, sameOrigin, failure, rate } from '@/lib/security';
+
 
 export const dynamic = 'force-dynamic';
 
@@ -16,6 +17,8 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: Request) {
   try {
     sameOrigin(req);
+    // 120 calls/min — generous for 10s polling interval
+    await rate(req, 'fitter-location', 120, 60000);
     const body = await jsonBody(req);
     const { fitter_code, lat, lng, is_online } = body as {
       fitter_code: unknown;
@@ -65,6 +68,7 @@ export async function POST(req: Request) {
 export async function DELETE(req: Request) {
   try {
     sameOrigin(req);
+    await rate(req, 'fitter-location', 120, 60000);
     const body = await jsonBody(req);
     const { fitter_code } = body as { fitter_code: unknown };
 

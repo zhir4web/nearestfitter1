@@ -1,12 +1,13 @@
 import { getFitterByDashboardCode, getPendingDispatchForFitter } from '@/lib/repository';
-import { failure } from '@/lib/security';
+import { failure, rate } from '@/lib/security';
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ fitterCode: string }> },
 ) {
   try {
     const { fitterCode } = await params;
+    await rate(req, 'fitter-dashboard', 120, 60000);
     
     // Check if code is valid
     const fitter = await getFitterByDashboardCode(fitterCode);

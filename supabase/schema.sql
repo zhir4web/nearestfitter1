@@ -15,10 +15,47 @@ create table if not exists public.reviews (
 create index if not exists review_fitter_status on public.reviews(fitter_id,status);
 create table if not exists public.contacts(id text primary key,name text not null,email text not null,message text not null,created_at text not null);
 create table if not exists public.rate_limits(key text primary key,count integer not null,expires bigint not null);
+-- Dispatch requests: created per user request, assigned to nearest fitter
+create table if not exists public.dispatch_requests (
+  id               text primary key,
+  fitter_id        text not null references public.fitters(id) on delete cascade,
+  user_lat         double precision not null,
+  user_lng         double precision not null,
+  user_phone       text not null,
+  user_note        text not null default '',
+  status           text not null default 'pending'
+                     check(status in ('pending','accepted','en_route','completed','declined','expired','reassigning')),
+  fitter_token     text not null unique,
+  user_token       text not null unique,
+  tried_fitters    text not null default '[]',
+  reassign_count   integer not null default 0,
+  expires_at       text not null,
+  created_at       text not null,
+  accepted_at      text,
+  completed_at     text,
+  fitter_lat       double precision,
+  fitter_lng       double precision
+);
+create index if not exists dispatch_fitter_token on public.dispatch_requests(fitter_token);
+create index if not exists dispatch_user_token on public.dispatch_requests(user_token);
+create index if not exists dispatch_status_created on public.dispatch_requests(status, created_at);
+-- Fitter dashboards: one-per-fitter, holds live location & online status
+create table if not exists public.fitter_dashboards (
+  id           text primary key,
+  fitter_id    text not null unique references public.fitters(id) on delete cascade,
+  code         text not null unique,
+  created_at   text not null,
+  is_online    boolean not null default false,
+  current_lat  double precision,
+  current_lng  double precision
+);
+create index if not exists fitter_dashboard_code on public.fitter_dashboards(code);
 alter table public.fitters enable row level security;
 alter table public.reviews enable row level security;
 alter table public.contacts enable row level security;
 alter table public.rate_limits enable row level security;
+alter table public.dispatch_requests enable row level security;
+alter table public.fitter_dashboards enable row level security;
 -- No anonymous policies: the service-role key stays on the Next.js server.
 create or replace function public.hit_rate_limit(p_key text,p_now bigint,p_expires bigint) returns integer language sql security definer set search_path=public as $$
  insert into rate_limits(key,count,expires) values(p_key,1,p_expires)

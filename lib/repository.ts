@@ -9,7 +9,7 @@ function local() {
   if (process.env.VERCEL && !process.env.SUPABASE_URL) return null;
   return (globalDb.db ??= new PrismaClient());
 }
-function remote() {
+export function remote() {
   return process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
     ? createClient(
         process.env.SUPABASE_URL,
@@ -136,22 +136,30 @@ export async function publicFitters() {
     });
 }
 export async function createDispatch(data: DispatchRequest): Promise<void> {
+  const s = remote();
+  if (s) {
+    const { error } = await s.from('dispatch_requests').insert({
+      id: data.id, fitter_id: data.fitter_id,
+      user_lat: data.user_lat, user_lng: data.user_lng,
+      user_phone: data.user_phone, user_note: data.user_note,
+      status: data.status, fitter_token: data.fitter_token,
+      user_token: data.user_token, tried_fitters: data.tried_fitters,
+      reassign_count: data.reassign_count, expires_at: data.expires_at,
+      created_at: data.created_at,
+    });
+    if (error) throw error;
+    return;
+  }
   const p = local();
   if (!p) throw new Error('Database not configured');
   await p.dispatchRequest.create({
     data: {
-      id: data.id,
-      fitter_id: data.fitter_id,
-      user_lat: data.user_lat,
-      user_lng: data.user_lng,
-      user_phone: data.user_phone,
-      user_note: data.user_note,
-      status: data.status,
-      fitter_token: data.fitter_token,
-      user_token: data.user_token,
-      tried_fitters: data.tried_fitters,
-      reassign_count: data.reassign_count,
-      expires_at: data.expires_at,
+      id: data.id, fitter_id: data.fitter_id,
+      user_lat: data.user_lat, user_lng: data.user_lng,
+      user_phone: data.user_phone, user_note: data.user_note,
+      status: data.status, fitter_token: data.fitter_token,
+      user_token: data.user_token, tried_fitters: data.tried_fitters,
+      reassign_count: data.reassign_count, expires_at: data.expires_at,
       created_at: data.created_at,
     },
   });
@@ -161,6 +169,21 @@ export async function getDispatchByUserToken(token: string): Promise<{
   id: string; status: string; fitter_name: string;
   reassign_count: number; expires_at: string; created_at: string;
 } | null> {
+  const s = remote();
+  if (s) {
+    const { data, error } = await s
+      .from('dispatch_requests')
+      .select('id,status,reassign_count,expires_at,created_at,fitters(name)')
+      .eq('user_token', token)
+      .single();
+    if (error || !data) return null;
+    const fitterRow = data.fitters as any;
+    return {
+      id: data.id, status: data.status, fitter_name: fitterRow?.name ?? '',
+      reassign_count: data.reassign_count,
+      expires_at: data.expires_at, created_at: data.created_at,
+    };
+  }
   const p = local();
   if (!p) return null;
   const r = await p.dispatchRequest.findUnique({
@@ -169,12 +192,9 @@ export async function getDispatchByUserToken(token: string): Promise<{
   });
   if (!r) return null;
   return {
-    id: r.id,
-    status: r.status,
-    fitter_name: r.fitter.name,
+    id: r.id, status: r.status, fitter_name: r.fitter.name,
     reassign_count: r.reassign_count,
-    expires_at: r.expires_at,
-    created_at: r.created_at,
+    expires_at: r.expires_at, created_at: r.created_at,
   };
 }
 // For fitter dashboard — shows location but NOT user phone
@@ -183,6 +203,23 @@ export async function getDispatchByFitterToken(token: string): Promise<{
   status: string; fitter_token: string; expires_at: string; created_at: string;
   fitter_name: string; fitter_whatsapp: string;
 } | null> {
+  const s = remote();
+  if (s) {
+    const { data, error } = await s
+      .from('dispatch_requests')
+      .select('id,user_lat,user_lng,user_note,status,fitter_token,expires_at,created_at,fitters(name,whatsapp)')
+      .eq('fitter_token', token)
+      .single();
+    if (error || !data) return null;
+    const fitterRow = data.fitters as any;
+    return {
+      id: data.id, user_lat: data.user_lat, user_lng: data.user_lng,
+      user_note: data.user_note, status: data.status,
+      fitter_token: data.fitter_token, expires_at: data.expires_at,
+      created_at: data.created_at,
+      fitter_name: fitterRow?.name ?? '', fitter_whatsapp: fitterRow?.whatsapp ?? '',
+    };
+  }
   const p = local();
   if (!p) return null;
   const r = await p.dispatchRequest.findUnique({
@@ -191,16 +228,10 @@ export async function getDispatchByFitterToken(token: string): Promise<{
   });
   if (!r) return null;
   return {
-    id: r.id,
-    user_lat: r.user_lat,
-    user_lng: r.user_lng,
-    user_note: r.user_note,
-    status: r.status,
-    fitter_token: r.fitter_token,
-    expires_at: r.expires_at,
-    created_at: r.created_at,
-    fitter_name: r.fitter.name,
-    fitter_whatsapp: r.fitter.whatsapp,
+    id: r.id, user_lat: r.user_lat, user_lng: r.user_lng,
+    user_note: r.user_note, status: r.status, fitter_token: r.fitter_token,
+    expires_at: r.expires_at, created_at: r.created_at,
+    fitter_name: r.fitter.name, fitter_whatsapp: r.fitter.whatsapp,
   };
 }
 // For fitter dashboard page — gets pending OR accepted requests for this fitter
@@ -208,6 +239,23 @@ export async function getPendingDispatchForFitter(fitter_id: string): Promise<{
   id: string; user_lat: number; user_lng: number; user_note: string;
   fitter_token: string; expires_at: string; created_at: string; status: string;
 } | null> {
+  const s = remote();
+  if (s) {
+    const { data, error } = await s
+      .from('dispatch_requests')
+      .select('id,user_lat,user_lng,user_note,fitter_token,expires_at,created_at,status')
+      .eq('fitter_id', fitter_id)
+      .in('status', ['pending', 'accepted'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error || !data) return null;
+    return {
+      id: data.id, user_lat: data.user_lat, user_lng: data.user_lng,
+      user_note: data.user_note, fitter_token: data.fitter_token,
+      expires_at: data.expires_at, created_at: data.created_at, status: data.status,
+    };
+  }
   const p = local();
   if (!p) return null;
   const r = await p.dispatchRequest.findFirst({
@@ -216,25 +264,51 @@ export async function getPendingDispatchForFitter(fitter_id: string): Promise<{
   });
   if (!r) return null;
   return {
-    id: r.id,
-    user_lat: r.user_lat,
-    user_lng: r.user_lng,
-    user_note: r.user_note,
-    fitter_token: r.fitter_token,
-    expires_at: r.expires_at,
-    created_at: r.created_at,
-    status: r.status,
+    id: r.id, user_lat: r.user_lat, user_lng: r.user_lng,
+    user_note: r.user_note, fitter_token: r.fitter_token,
+    expires_at: r.expires_at, created_at: r.created_at, status: r.status,
   };
 }
 export async function updateDispatchStatus(
   id: string, status: string,
   extra?: { accepted_at?: string; completed_at?: string; tried_fitters?: string; reassign_count?: number; fitter_id?: string; fitter_token?: string; expires_at?: string },
 ): Promise<void> {
+  const s = remote();
+  if (s) {
+    const { error } = await s
+      .from('dispatch_requests')
+      .update({ status, ...extra })
+      .eq('id', id);
+    if (error) throw error;
+    return;
+  }
   const p = local();
   if (!p) throw new Error('Database not configured');
   await p.dispatchRequest.update({ where: { id }, data: { status, ...extra } });
 }
 export async function getDispatchById(id: string): Promise<(DispatchRequest & { fitter_whatsapp: string }) | null> {
+  const s = remote();
+  if (s) {
+    const { data, error } = await s
+      .from('dispatch_requests')
+      .select('*,fitters(whatsapp)')
+      .eq('id', id)
+      .single();
+    if (error || !data) return null;
+    const fitterRow = data.fitters as any;
+    return {
+      id: data.id, fitter_id: data.fitter_id,
+      user_lat: data.user_lat, user_lng: data.user_lng,
+      user_phone: data.user_phone, user_note: data.user_note,
+      status: data.status as DispatchRequest['status'],
+      fitter_token: data.fitter_token, user_token: data.user_token,
+      tried_fitters: data.tried_fitters, reassign_count: data.reassign_count,
+      expires_at: data.expires_at, created_at: data.created_at,
+      accepted_at: data.accepted_at ?? undefined,
+      completed_at: data.completed_at ?? undefined,
+      fitter_whatsapp: fitterRow?.whatsapp ?? '',
+    };
+  }
   const p = local();
   if (!p) return null;
   const r = await p.dispatchRequest.findUnique({
@@ -256,9 +330,19 @@ export async function getDispatchById(id: string): Promise<(DispatchRequest & { 
   };
 }
 export async function expireOldDispatches(): Promise<void> {
+  const s = remote();
+  const now = new Date().toISOString();
+  if (s) {
+    const { error } = await s
+      .from('dispatch_requests')
+      .update({ status: 'expired' })
+      .eq('status', 'pending')
+      .lt('expires_at', now);
+    if (error) throw error;
+    return;
+  }
   const p = local();
   if (!p) return;
-  const now = new Date().toISOString();
   await p.dispatchRequest.updateMany({
     where: { status: 'pending', expires_at: { lt: now } },
     data: { status: 'expired' },
@@ -266,15 +350,39 @@ export async function expireOldDispatches(): Promise<void> {
 }
 // FitterDashboard CRUD
 export async function createFitterDashboard(fitter_id: string, code: string): Promise<void> {
+  const created_at = new Date().toISOString();
+  const s = remote();
+  if (s) {
+    const { error } = await s
+      .from('fitter_dashboards')
+      .upsert({ id: code, fitter_id, code, created_at }, { onConflict: 'fitter_id' });
+    if (error) throw error;
+    return;
+  }
   const p = local();
   if (!p) throw new Error('Database not configured');
-  await p.fitterDashboard.create({
-    data: { id: code, fitter_id, code, created_at: new Date().toISOString() },
-  });
+  const existing = await p.fitterDashboard.findUnique({ where: { fitter_id } });
+  if (existing) {
+    await p.fitterDashboard.update({ where: { fitter_id }, data: { code, id: code } });
+  } else {
+    await p.fitterDashboard.create({ data: { id: code, fitter_id, code, created_at } });
+  }
 }
 export async function getFitterByDashboardCode(code: string): Promise<{
   fitter_id: string; fitter_name: string; fitter_type: string;
 } | null> {
+  const s = remote();
+  if (s) {
+    const { data, error } = await s
+      .from('fitter_dashboards')
+      .select('fitter_id,fitters(name,type,status)')
+      .eq('code', code)
+      .single();
+    if (error || !data) return null;
+    const fitterRow = data.fitters as any;
+    if (!fitterRow || fitterRow.status !== 'approved') return null;
+    return { fitter_id: data.fitter_id, fitter_name: fitterRow.name, fitter_type: fitterRow.type };
+  }
   const p = local();
   if (!p) return null;
   const r = await p.fitterDashboard.findUnique({
@@ -291,15 +399,20 @@ export async function updateFitterOnlineStatus(
   lat?: number,
   lng?: number,
 ): Promise<void> {
+  const s = remote();
+  if (s) {
+    const { error } = await s
+      .from('fitter_dashboards')
+      .update({ is_online, current_lat: lat ?? null, current_lng: lng ?? null })
+      .eq('fitter_id', fitter_id);
+    if (error) throw error;
+    return;
+  }
   const p = local();
   if (!p) return;
   await p.fitterDashboard.update({
     where: { fitter_id },
-    data: {
-      is_online,
-      current_lat: lat ?? null,
-      current_lng: lng ?? null,
-    },
+    data: { is_online, current_lat: lat ?? null, current_lng: lng ?? null },
   });
 }
 // Update fitter location in an active dispatch request (for user tracking)
@@ -308,6 +421,15 @@ export async function updateDispatchFitterLocation(
   lat: number,
   lng: number,
 ): Promise<void> {
+  const s = remote();
+  if (s) {
+    const { error } = await s
+      .from('dispatch_requests')
+      .update({ fitter_lat: lat, fitter_lng: lng })
+      .eq('fitter_token', fitter_token);
+    if (error) throw error;
+    return;
+  }
   const p = local();
   if (!p) return;
   await p.dispatchRequest.update({
@@ -322,6 +444,22 @@ export async function getDispatchFitterLocation(user_token: string): Promise<{
   status: string;
   fitter_name: string;
 } | null> {
+  const s = remote();
+  if (s) {
+    const { data, error } = await s
+      .from('dispatch_requests')
+      .select('fitter_lat,fitter_lng,status,fitters(name)')
+      .eq('user_token', user_token)
+      .single();
+    if (error || !data) return null;
+    const fitterRow = data.fitters as any;
+    return {
+      fitter_lat: data.fitter_lat,
+      fitter_lng: data.fitter_lng,
+      status: data.status,
+      fitter_name: fitterRow?.name ?? '',
+    };
+  }
   const p = local();
   if (!p) return null;
   const r = await p.dispatchRequest.findUnique({
@@ -338,6 +476,15 @@ export async function getDispatchFitterLocation(user_token: string): Promise<{
 }
 // Get active fitter IDs (to show busy badges in directory)
 export async function getActiveFitterIds(): Promise<Set<string>> {
+  const s = remote();
+  if (s) {
+    const { data, error } = await s
+      .from('dispatch_requests')
+      .select('fitter_id')
+      .in('status', ['pending', 'accepted']);
+    if (error) throw error;
+    return new Set((data ?? []).map((r) => r.fitter_id));
+  }
   const p = local();
   if (!p) return new Set();
   const active = await p.dispatchRequest.findMany({
@@ -346,4 +493,3 @@ export async function getActiveFitterIds(): Promise<Set<string>> {
   });
   return new Set(active.map((r) => r.fitter_id));
 }
-

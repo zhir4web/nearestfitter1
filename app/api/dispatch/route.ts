@@ -32,6 +32,17 @@ export async function POST(req: Request) {
       return Response.json({ error: 'Invalid data' }, { status: 400 });
     }
 
+    // Validate coordinates are within Sulaymaniyah service area
+    if (
+      user_lat < 35.2 || user_lat > 35.9 ||
+      user_lng < 45.0 || user_lng > 45.9
+    ) {
+      return Response.json(
+        { error: 'موقعیت لە دەرەوەی خزمەتگوزاریە. تەنها سلێمانی.' },
+        { status: 422 },
+      );
+    }
+
     const note = typeof user_note === 'string' ? user_note.substring(0, 500) : '';
     const tried = Array.isArray(tried_fitters) ? tried_fitters : [];
 
@@ -41,8 +52,15 @@ export async function POST(req: Request) {
     // Find nearest open non-demo fitter not in tried list
     const fitters = await publicFitters();
     const now = new Date();
+    const busy = await getActiveFitterIds();
     const open = fitters.filter(
-      (f) => !f.demo && opening(f.working_hours, now).open && !tried.includes(f.id),
+      (f) =>
+        f.status === 'approved' &&
+        !f.demo &&
+        !tried.includes(f.id) &&
+        !busy.has(f.id) &&
+        f.working_hours?.length > 0 &&
+        opening(f.working_hours, now).open,
     );
 
     if (!open.length) {

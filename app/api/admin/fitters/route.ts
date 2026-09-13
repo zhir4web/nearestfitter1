@@ -1,5 +1,5 @@
-import { randomUUID } from 'node:crypto';
-import { insert, update, rows, remove } from '@/lib/repository';
+import { randomBytes, randomUUID } from 'node:crypto';
+import { insert, update, rows, remove, createFitterDashboard } from '@/lib/repository';
 import {
   sameOrigin,
   requireAdmin,
@@ -11,6 +11,12 @@ import {
 import { fitterSchema } from '@/lib/validation';
 import { savePhoto, removePhoto } from '@/lib/photos';
 import type { Fitter } from '@/types';
+
+/** Generate a strong 32-char hex dashboard code (16 random bytes) */
+function newDashboardCode() {
+  return randomBytes(16).toString('hex');
+}
+
 export async function POST(req: Request) {
   let photo = '';
   try {
@@ -42,7 +48,12 @@ export async function POST(req: Request) {
       created_at: existing?.created_at || new Date().toISOString(),
     };
     if (existing) await update('fitters', id, record);
-    else await insert('fitters', record);
+    else {
+      await insert('fitters', record);
+      // Auto-create dashboard for new fitters (approved or pending)
+      const code = newDashboardCode();
+      try { await createFitterDashboard(id, code); } catch { /* non-fatal */ }
+    }
     if (existing?.photo_url && existing.photo_url !== record.photo_url)
       await removePhoto(existing.photo_url);
     return Response.json({ id });
@@ -51,6 +62,7 @@ export async function POST(req: Request) {
     return failure(e);
   }
 }
+
 export async function PATCH(req: Request) {
   try {
     sameOrigin(req);
@@ -58,11 +70,15 @@ export async function PATCH(req: Request) {
     const { id } = await jsonBody(req);
     if (typeof id !== 'string') throw new HttpError(400, 'Invalid ID');
     await update('fitters', id, { status: 'approved' });
-    return Response.json({ ok: true });
+    // Ensure a dashboard exists — create one if missing
+    const code = newDashboardCode();
+    try { await createFitterDashboard(id, code); } catch { /* dashboard may already exist */ }
+    return Response.json({ ok: true, dashboard_code: code });
   } catch (e) {
     return failure(e);
   }
 }
+
 export async function DELETE(req: Request) {
   try {
     sameOrigin(req);

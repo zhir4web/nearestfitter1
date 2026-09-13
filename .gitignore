@@ -34,6 +34,9 @@ yarn-error.log*
 /prisma/*.db-*
 *.tsbuildinfo
 
+# scratch / local-only scripts (may contain hardcoded test credentials)
+/scratch/
+
 # deployment and generated files
 .vercel
 next-env.d.ts
