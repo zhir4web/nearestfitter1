@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { createClient } from '@supabase/supabase-js';
 
-const mockFitters = [
+export const mockFitters = [
   {
     id: 'fitter-1',
     name: 'فیتەری مەلیک مەحمود (٢٤ کاتژمێر)',

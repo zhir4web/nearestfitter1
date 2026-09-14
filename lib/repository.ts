@@ -115,7 +115,18 @@ export async function hitLimit(key: string, max: number, windowMs: number) {
   return result[0].count > max;
 }
 export async function publicFitters() {
-  if (process.env.VERCEL && !process.env.SUPABASE_URL) return [];
+  if (process.env.VERCEL && !process.env.SUPABASE_URL) {
+    // Return mock data for Vercel preview without a database
+    const { mockFitters } = await import('../scripts/seed');
+    return mockFitters.map(f => {
+      const rs = f.reviews || [];
+      return {
+        ...f,
+        review_count: rs.length,
+        rating: rs.length ? rs.reduce((a, r) => a + r.rating, 0) / rs.length : 0,
+      };
+    }) as any[];
+  }
   const [fitters, reviews] = await Promise.all([
     rows<Fitter>('fitters'),
     rows<Review>('reviews'),
