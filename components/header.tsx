@@ -73,19 +73,10 @@ export function Header() {
         </div>
       </header>
 
-      {/* Fullscreen Overlay Menu */}
+      {/* Premium Fullscreen Menu Overlay */}
       {isMenuOpen && (
-        <div className="menu-overlay" style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'var(--background)',
-          zIndex: 9999,
-          display: 'flex',
-          flexDirection: 'column',
-          padding: '24px',
-          animation: 'fade-in 0.2s ease-out'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
+        <div className="menu-overlay">
+          <div className="menu-header">
             <div className="brand" style={{ fontSize: '20px' }}>
               <span className="brand-icon" style={{ width: '38px', height: '42px' }}>
                 <CircleDot size={24} />
@@ -93,83 +84,58 @@ export function Header() {
               <span>{t.brand}</span>
             </div>
             <button 
+              className="menu-close-btn"
               onClick={() => setIsMenuOpen(false)}
-              style={{
-                background: 'var(--muted)',
-                border: 'none',
-                color: 'var(--foreground)',
-                borderRadius: '50%',
-                width: '40px',
-                height: '40px',
-                display: 'grid',
-                placeItems: 'center'
-              }}
+              aria-label="Close menu"
             >
               <X size={24} />
             </button>
           </div>
 
-          <nav style={{ display: 'flex', flexDirection: 'column', gap: '20px', fontSize: '18px', fontWeight: '600' }}>
-            <Link data-active={path === '/'} href="/" style={{ display: 'flex', alignItems: 'center', gap: '12px', color: path === '/' ? 'var(--primary)' : 'var(--foreground)' }}>
+          <nav className="menu-nav">
+            <Link data-active={path === '/'} href="/">
               <MapIcon size={22} />
               {t.map}
             </Link>
-            <Link data-active={path === '/about'} href="/about" style={{ display: 'flex', alignItems: 'center', gap: '12px', color: path === '/about' ? 'var(--primary)' : 'var(--foreground)' }}>
+            <Link data-active={path === '/about'} href="/about">
               <Info size={22} />
               {t.about}
             </Link>
-            <Link data-active={path === '/contact'} href="/contact" style={{ display: 'flex', alignItems: 'center', gap: '12px', color: path === '/contact' ? 'var(--primary)' : 'var(--foreground)' }}>
+            <Link data-active={path === '/contact'} href="/contact">
               <Phone size={22} />
               {t.contact}
             </Link>
+            <Link data-active={path === '/admin'} href="/admin">
+              <CircleDot size={22} />
+              {t.admin || 'Admin'}
+            </Link>
           </nav>
 
-          <div style={{ marginTop: 'auto', borderTop: '1px solid var(--border)', paddingTop: '24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            
+          <div className="menu-bottom">
             {/* Theme Toggle */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '12px', fontWeight: '500' }}>
+            <div className="menu-setting-row">
+              <span className="menu-setting-label">
                 {isDark ? <Moon size={20} /> : <Sun size={20} />}
-                {isDark ? 'تاریک' : 'ڕووناک'} {/* Localization logic can be added if translation is provided, keeping it simple for now */}
+                {isDark ? 'تاریک' : 'ڕووناک'}
               </span>
-              <button 
-                onClick={toggleTheme}
-                style={{
-                  background: 'var(--muted)',
-                  border: '1px solid var(--border)',
-                  color: 'var(--foreground)',
-                  padding: '8px 16px',
-                  borderRadius: '20px',
-                  fontSize: '14px',
-                  fontWeight: '600'
-                }}
-              >
+              <button className="menu-toggle-btn" onClick={toggleTheme}>
                 {isDark ? 'گۆڕین بۆ ڕووناک' : 'گۆڕین بۆ تاریک'}
               </button>
             </div>
 
             {/* Language Selector */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '12px', fontWeight: '500' }}>
+            <div className="menu-setting-row">
+              <span className="menu-setting-label">
                 <Globe size={20} />
                 {t.language}
               </span>
-              <div className="languages" style={{ display: 'flex', gap: '4px', background: 'var(--muted)', padding: '4px', borderRadius: '8px' }}>
+              <div className="menu-lang-selector">
                 {(['ckb', 'en', 'ar'] as const).map((l) => (
                   <button
                     key={l}
                     aria-pressed={lang === l}
                     onClick={() => setLang(l)}
-                    style={{
-                      background: lang === l ? 'var(--primary)' : 'transparent',
-                      color: lang === l ? 'var(--primary-foreground)' : 'var(--muted-foreground)',
-                      border: 'none',
-                      padding: '6px 12px',
-                      borderRadius: '6px',
-                      fontSize: '13px',
-                      fontWeight: '600',
-                      transition: 'all 0.2s'
-                    }}
+                    className="menu-lang-btn"
                   >
                     {l === 'ckb' ? 'کوردی' : l === 'en' ? 'EN' : 'عربي'}
                   </button>
