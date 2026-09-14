@@ -114,10 +114,11 @@ export async function hitLimit(key: string, max: number, windowMs: number) {
   >`INSERT INTO rate_limits (key,count,expires) VALUES (${key},1,${BigInt(expires)}) ON CONFLICT(key) DO UPDATE SET count=CASE WHEN expires<${BigInt(now)} THEN 1 ELSE count+1 END, expires=CASE WHEN expires<${BigInt(now)} THEN ${BigInt(expires)} ELSE expires END RETURNING count`;
   return result[0].count > max;
 }
+import { mockFitters } from './mock-data';
+
 export async function publicFitters() {
   if (process.env.VERCEL && !process.env.SUPABASE_URL) {
     // Return mock data for Vercel preview without a database
-    const { mockFitters } = await import('../scripts/seed');
     return mockFitters.map(f => {
       const rs = f.reviews || [];
       return {
