@@ -1,6 +1,6 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
-@import '@fontsource-variable/vazirmatn';
+@import '@fontsource-variable/noto-sans-arabic';
 @import '@fontsource-variable/manrope';
 @custom-variant dark (&:is(.dark *));
 :root {
@@ -52,12 +52,12 @@ body {
   margin: 0;
   background: var(--background);
   color: var(--foreground);
-  font-family: 'Vazirmatn Variable', 'Manrope Variable', sans-serif;
+  font-family: 'Noto Sans Arabic Variable', 'Manrope Variable', sans-serif;
   font-size: 16px;
   line-height: 1.7;
 }
 html[lang='en'] body {
-  font-family: 'Manrope Variable', 'Vazirmatn Variable', sans-serif;
+  font-family: 'Manrope Variable', 'Noto Sans Arabic Variable', sans-serif;
 }
 button,
 input,
