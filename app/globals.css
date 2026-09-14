@@ -263,20 +263,19 @@ nav a[data-active='true']:after {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 16px 20px;
-  font-size: 18px;
-  font-weight: 600;
+  padding: 14px 0;
+  font-size: 20px;
+  font-weight: 500;
   color: #aab1bb;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 16px;
   text-decoration: none;
-  transition: 0.25s;
+  transition: 0.2s;
 }
 
 .menu-nav a[data-active="true"] {
-  background: rgba(255, 120, 45, 0.1);
-  border-color: rgba(255, 120, 45, 0.3);
+  color: #fff;
+  font-weight: 700;
+}
+.menu-nav a[data-active="true"] svg {
   color: var(--primary);
 }
 
@@ -1718,7 +1717,7 @@ h1 > span {
   }
   .map-surface {
     position: absolute;
-    inset: 0 0 280px;
+    inset: 0 0 calc(52vh - 30px);
   }
   .results-panel {
     position: absolute;
@@ -1727,7 +1726,8 @@ h1 > span {
     right: 0;
     width: 100%;
     min-width: 0;
-    height: 410px;
+    height: 52vh;
+    min-height: 450px;
     max-height: calc(100% - 75px);
     border-radius: 22px 22px 0 0;
     border-top: 1px solid #4b515a;

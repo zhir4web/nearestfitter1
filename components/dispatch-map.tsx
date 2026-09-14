@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   MapContainer,
   TileLayer,
@@ -61,7 +61,6 @@ function AutoBounds({
   return null;
 }
 
-const OSM_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
 const OSM_ATTRIB =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
 
@@ -85,9 +84,23 @@ export default function DispatchMap({
     fitterLat !== undefined && fitterLng !== undefined
       ? [fitterLat, fitterLng]
       : undefined;
+  const [isDark, setIsDark] = useState(true);
+
+  useEffect(() => {
+    setIsDark(document.documentElement.classList.contains('dark'));
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
+
+  const tileUrl = isDark 
+    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+    : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
 
   return (
-    <div className={`dispatch-map-wrap ${compact ? 'compact' : ''}`}>
+    <div className={`dispatch-map-wrap ${compact ? 'compact' : ''} ${isDark ? 'map-dark' : 'map-light'}`}>
       <MapContainer
         center={userPos}
         zoom={15}
@@ -95,7 +108,7 @@ export default function DispatchMap({
         zoomControl={false}
         className="dispatch-leaflet-map"
       >
-        <TileLayer url={OSM_URL} attribution={OSM_ATTRIB} maxZoom={19} />
+        <TileLayer url={tileUrl} attribution={OSM_ATTRIB} maxZoom={19} />
         <ZoomControl position="bottomright" />
 
         {/* Customer location */}

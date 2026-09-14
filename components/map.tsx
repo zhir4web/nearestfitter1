@@ -126,8 +126,7 @@ function MapActions({ user }: { user?: [number, number] }) {
   );
 }
 
-// هەردوو مۆد هەمان OSM تایل بەکار دێت — تەنها CSS فلتەر دەگۆڕێت
-const OSM_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+// تایلەکان بەپێی دۆخی ڕووناکی یان تاریکی دەگۆڕێن
 const OSM_ATTRIB =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
 
@@ -149,9 +148,23 @@ export default function FitterMap({
   const { t } = useLanguage();
   const isMobile = useIsMobile();
   const [failed, setFailed] = useState(false);
+  const [isDark, setIsDark] = useState(true);
+
+  useEffect(() => {
+    setIsDark(document.documentElement.classList.contains('dark'));
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
+
+  const tileUrl = isDark 
+    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+    : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
 
   return (
-    <div className="map-inner map-dark">
+    <div className={`map-inner ${isDark ? 'map-dark' : 'map-light'}`}>
       <MapContainer
         center={pick || CENTER}
         zoom={pick ? 14 : 13}
@@ -161,8 +174,8 @@ export default function FitterMap({
       >
         <MapActions user={user} />
         <TileLayer
-          url={OSM_URL}
           attribution={OSM_ATTRIB}
+          url={tileUrl}
           maxZoom={19}
           eventHandlers={{
             tileerror: () => setFailed(true),

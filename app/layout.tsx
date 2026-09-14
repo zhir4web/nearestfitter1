@@ -40,10 +40,14 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               try {
-                if (localStorage.getItem('theme') === 'light' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: light)').matches)) {
-                  document.documentElement.classList.remove('dark')
+                let theme = localStorage.getItem('theme') || 'auto';
+                if (theme === 'auto') {
+                  theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                }
+                if (theme === 'dark') {
+                  document.documentElement.classList.add('dark');
                 } else {
-                  document.documentElement.classList.add('dark')
+                  document.documentElement.classList.remove('dark');
                 }
               } catch (_) {}
             `,

@@ -9,24 +9,27 @@ export function Header() {
   const { t, lang, setLang } = useLanguage();
   const path = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isDark, setIsDark] = useState(true);
+  const [theme, setTheme] = useState<'light' | 'dark' | 'auto'>('auto');
 
-  // Initialize theme from localStorage/document
+  // Initialize theme from localStorage
   useEffect(() => {
-    const isDarkMode = document.documentElement.classList.contains('dark');
-    setIsDark(isDarkMode);
+    const saved = localStorage.getItem('theme') as 'light' | 'dark' | 'auto';
+    if (saved) setTheme(saved);
   }, []);
 
-  const toggleTheme = () => {
-    const newTheme = !isDark;
-    setIsDark(newTheme);
-    if (newTheme) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
+  const changeTheme = (newTheme: 'light' | 'dark' | 'auto') => {
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
+    
+    let isDark = false;
+    if (newTheme === 'auto') {
+      isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
+      isDark = newTheme === 'dark';
     }
+    
+    document.documentElement.classList.toggle('dark', isDark);
+    window.dispatchEvent(new CustomEvent('theme-change', { detail: newTheme }));
   };
 
   // Close menu on route change
@@ -113,14 +116,34 @@ export function Header() {
 
           <div className="menu-bottom">
             {/* Theme Toggle */}
-            <div className="menu-setting-row">
+            <div className="menu-setting-row" style={{ flexWrap: 'wrap', gap: '10px' }}>
               <span className="menu-setting-label">
-                {isDark ? <Moon size={20} /> : <Sun size={20} />}
-                {isDark ? 'تاریک' : 'ڕووناک'}
+                {theme === 'dark' ? <Moon size={20} /> : theme === 'light' ? <Sun size={20} /> : <CircleDot size={20} />}
+                {(t as any).theme || 'ڕووکار'}
               </span>
-              <button className="menu-toggle-btn" onClick={toggleTheme}>
-                {isDark ? 'گۆڕین بۆ ڕووناک' : 'گۆڕین بۆ تاریک'}
-              </button>
+              <div className="menu-lang-selector">
+                <button 
+                  className="menu-lang-btn" 
+                  aria-pressed={theme === 'auto'} 
+                  onClick={() => changeTheme('auto')}
+                >
+                  {(t as any).auto || 'ئۆتۆماتیک'}
+                </button>
+                <button 
+                  className="menu-lang-btn" 
+                  aria-pressed={theme === 'light'} 
+                  onClick={() => changeTheme('light')}
+                >
+                  {(t as any).light || 'ڕووناک'}
+                </button>
+                <button 
+                  className="menu-lang-btn" 
+                  aria-pressed={theme === 'dark'} 
+                  onClick={() => changeTheme('dark')}
+                >
+                  {(t as any).dark || 'تاریک'}
+                </button>
+              </div>
             </div>
 
             {/* Language Selector */}
