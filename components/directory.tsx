@@ -183,8 +183,6 @@ export function Directory() {
                 {t.sosBadge}
               </span>
             </div>
-            <h3>{t.sosTitle}</h3>
-            <p>{t.sosDesc}</p>
             <button
               type="button"
               className="button sos-btn"
@@ -511,20 +509,22 @@ export function Directory() {
           onSelect={setSelected}
           user={user}
         />
-        <div className="map-caption">
-          <span className="live-dot" />
-          {t.city}
-          <small>KURDISTAN REGION · IRAQ</small>
-        </div>
-        <div className="map-legend">
-          <span>
-            <i className="fixed-dot" />
-            {t.fixed}
-          </span>
-          <span>
-            <i className="mobile-dot" />
-            {t.mobile}
-          </span>
+        <div className="map-info-cluster">
+          <div className="map-caption">
+            <span className="live-dot" />
+            {t.city}
+            <small>KURDISTAN REGION · IRAQ</small>
+          </div>
+          <div className="map-legend">
+            <span>
+              <i className="fixed-dot" />
+              {t.fixed}
+            </span>
+            <span>
+              <i className="mobile-dot" />
+              {t.mobile}
+            </span>
+          </div>
         </div>
         {fitters.some((f) => f.demo) && (
           <div className="demo-banner">{t.demoBanner}</div>

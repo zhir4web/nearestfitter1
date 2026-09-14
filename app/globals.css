@@ -265,8 +265,8 @@ nav a[data-active='true']:after {
   background: linear-gradient(135deg, #251610 0%, #1c1722 100%);
   border: 1px solid rgba(255, 120, 45, 0.35);
   border-radius: 12px;
-  padding: 14px 15px;
-  margin-bottom: 18px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
   box-shadow: 0 4px 20px rgba(255, 120, 45, 0.12);
   overflow: hidden;
 }
@@ -418,6 +418,14 @@ h1 > span {
   scrollbar-width: none;
   flex-wrap: nowrap;
   padding-bottom: 2px;
+  scroll-snap-type: x mandatory;
+  -webkit-mask-image: linear-gradient(to right, transparent, black 15px, black calc(100% - 15px), transparent);
+  mask-image: linear-gradient(to right, transparent, black 15px, black calc(100% - 15px), transparent);
+  padding-inline: 15px; /* space for the mask */
+  margin-inline: -15px;
+}
+.service-chips > button {
+  scroll-snap-align: start;
 }
 .service-chips::-webkit-scrollbar {
   display: none;
@@ -429,6 +437,14 @@ h1 > span {
   scrollbar-width: none;
   flex-wrap: nowrap;
   padding-bottom: 2px;
+  scroll-snap-type: x mandatory;
+  -webkit-mask-image: linear-gradient(to right, transparent, black 15px, black calc(100% - 15px), transparent);
+  mask-image: linear-gradient(to right, transparent, black 15px, black calc(100% - 15px), transparent);
+  padding-inline: 15px; /* space for the mask */
+  margin-inline: -15px;
+}
+.neighborhood-chips > button {
+  scroll-snap-align: start;
 }
 .neighborhood-chips::-webkit-scrollbar {
   display: none;
@@ -479,10 +495,10 @@ h1 > span {
   }
 }
 .filter-chips button.active {
-  background: #ff782d18;
-  border-color: #ff782d;
-  color: #ff9b60;
-  font-weight: 600;
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-foreground, #17110d);
+  font-weight: 700;
 }
 .filter-row {
   display: flex;
@@ -752,20 +768,16 @@ h1 > span {
 }
 .leaflet-container {
   font-family: inherit !important;
-  background: #c8d0d3 !important;
+  background: #0e0f12 !important;
 }
-/* ڕۆژانە — کەمتر رەنگ تا لەگەڵ UI-ی تاریک بگونجێت */
-.leaflet-tile-pane {
-  filter: saturate(0.65) brightness(0.9) contrast(0.92);
+.leaflet-control-attribution {
+  background: rgba(14, 15, 18, 0.75) !important;
+  color: #aab1bb !important;
 }
-/* شەوانە — ئینڤێرت بۆ ئەوەی تاریک بخوێنرێتەوە */
-.map-dark .leaflet-tile-pane {
-  filter: invert(1) hue-rotate(200deg) saturate(0.4) brightness(0.85) contrast(1.05);
+.leaflet-control-attribution a {
+  color: #ff782d !important;
 }
-/* ڕۆژانە — ئینڤێرت ئەنجام نادات */
-.map-light .leaflet-tile-pane {
-  filter: saturate(0.65) brightness(0.9) contrast(0.92);
-}
+/* Map is natively dark, no CSS inversion needed */
 /* ——— Floating Map Controls ——— */
 .map-floating-controls {
   position: absolute;
@@ -799,7 +811,7 @@ h1 > span {
   transform: scale(1.06);
   }
 }
-.map-caption {
+.map-info-cluster {
   position: absolute;
   top: 22px;
   inset-inline-start: 24px;
@@ -807,16 +819,21 @@ h1 > span {
   background: rgba(14, 17, 22, 0.88);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  color: #fff;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 10px;
-  padding: 9px 15px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 14px;
+}
+.map-caption {
   display: flex;
   align-items: center;
   gap: 8px;
   font-weight: 600;
-  font-size: 15px;
+  font-size: 14px;
+  color: #fff;
 }
 .map-caption small {
   font: 9px 'Manrope Variable';
@@ -842,21 +859,12 @@ h1 > span {
   border-top-color: rgba(255,255,255,0.12) !important;
 }
 .map-legend {
-  position: absolute;
-  top: 22px;
-  inset-inline-end: 22px;
   display: flex;
   gap: 16px;
-  background: rgba(14, 17, 22, 0.88);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255,255,255,0.08);
-  padding: 10px 16px;
-  border-radius: 10px;
-  z-index: 400;
   font-size: 12px;
   color: #dde3ea;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  border-top: 1px solid rgba(255,255,255,0.06);
+  padding-top: 8px;
 }
 .map-legend span {
   display: flex;
@@ -1461,11 +1469,6 @@ h1 > span {
   .city {
     display: none;
   }
-  .map-legend {
-    top: 80px;
-    inset-inline-start: 24px;
-    inset-inline-end: auto;
-  }
   .results-panel {
     width: 385px;
     min-width: 385px;
@@ -1522,13 +1525,12 @@ h1 > span {
   .add-link span {
     display: none;
   }
-  .map-caption,
-  .map-legend {
+  .map-info-cluster {
     inset-inline-start: 14px;
+    padding: 8px 10px;
   }
   .map-legend {
     gap: 10px;
-    padding: 9px;
     font-size: 11px;
   }
   .demo-banner {
@@ -1579,8 +1581,8 @@ h1 > span {
     right: 0;
     width: 100%;
     min-width: 0;
-    height: 335px;
-    max-height: calc(100% - 60px);
+    height: 410px;
+    max-height: calc(100% - 75px);
     border-radius: 22px 22px 0 0;
     border-top: 1px solid #4b515a;
     transition: height 0.25s;

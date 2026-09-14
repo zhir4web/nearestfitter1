@@ -97,15 +97,7 @@ function Picker({ onPick }: { onPick: (p: [number, number]) => void }) {
   return null;
 }
 
-function MapActions({
-  user,
-  dark,
-  setDark,
-}: {
-  user?: [number, number];
-  dark: boolean;
-  setDark: React.Dispatch<React.SetStateAction<boolean>>;
-}) {
+function MapActions({ user }: { user?: [number, number] }) {
   const map = useMap();
   const { t } = useLanguage();
   return (
@@ -130,23 +122,14 @@ function MapActions({
       >
         <Building2 size={18} />
       </button>
-      <button
-        type="button"
-        className="map-control-btn"
-        onClick={() => setDark((d) => !d)}
-        title={dark ? 'ڕۆژ' : 'شەو'}
-        aria-label={dark ? 'Switch to day map' : 'Switch to night map'}
-      >
-        {dark ? <Sun size={18} /> : <Moon size={18} />}
-      </button>
     </div>
   );
 }
 
 // هەردوو مۆد هەمان OSM تایل بەکار دێت — تەنها CSS فلتەر دەگۆڕێت
-const OSM_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+const OSM_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
 const OSM_ATTRIB =
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
 
 export default function FitterMap({
   fitters = [],
@@ -166,14 +149,9 @@ export default function FitterMap({
   const { t } = useLanguage();
   const isMobile = useIsMobile();
   const [failed, setFailed] = useState(false);
-  // بە شێوەی خۆکار لە ساتی ئێستا دەزانین شەوە یان ڕۆژ
-  const [dark, setDark] = useState(() => {
-    const h = new Date().getHours();
-    return h >= 20 || h < 7; // شەو: 8PM → 7AM
-  });
 
   return (
-    <div className={`map-inner ${dark ? 'map-dark' : 'map-light'}`}>
+    <div className="map-inner map-dark">
       <MapContainer
         center={pick || CENTER}
         zoom={pick ? 14 : 13}
@@ -181,7 +159,7 @@ export default function FitterMap({
         zoomControl={false}
         className="leaflet-map"
       >
-        <MapActions user={user} dark={dark} setDark={setDark} />
+        <MapActions user={user} />
         <TileLayer
           url={OSM_URL}
           attribution={OSM_ATTRIB}
