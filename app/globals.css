@@ -121,6 +121,7 @@ textarea {
   position: relative;
   z-index: 30;
   background: #101216;
+  padding-top: env(safe-area-inset-top);
 }
 .brand {
   display: flex;
@@ -222,17 +223,21 @@ nav a[data-active='true']:after {
   font-weight: 650;
   min-height: 46px;
   font-size: 14px;
-}
-.button:hover {
+}@media (hover: hover) and (pointer: fine) {
+  .button:hover {
+
   background: #333a42;
+  }
 }
 .primary {
   background: var(--primary);
   color: #17110d;
   border-color: var(--primary);
-}
-.primary:hover {
+}@media (hover: hover) and (pointer: fine) {
+  .primary:hover {
+
   background: #ff955a;
+  }
 }
 .directory {
   height: calc(100dvh - 88px);
@@ -331,10 +336,12 @@ nav a[data-active='true']:after {
   justify-content: center;
   gap: 7px;
   transition: transform 0.16s, filter 0.16s;
-}
-.sos-btn:hover {
+}@media (hover: hover) and (pointer: fine) {
+  .sos-btn:hover {
+
   transform: translateY(-1px);
   filter: brightness(1.08);
+  }
 }
 .eyebrow {
   display: flex;
@@ -445,9 +452,11 @@ h1 > span {
   font-size: 13px;
   white-space: nowrap;
   transition: background 0.18s;
-}
-.add-link:hover {
+}@media (hover: hover) and (pointer: fine) {
+  .add-link:hover {
+
   background: #ff782d18;
+  }
 }
 .filter-chips button,
 .open-chip {
@@ -462,10 +471,12 @@ h1 > span {
   font-size: 13px;
   color: #c2c8d0;
   transition: background 0.16s, border-color 0.16s, color 0.16s;
-}
-.filter-chips button:hover {
+}@media (hover: hover) and (pointer: fine) {
+  .filter-chips button:hover {
+
   background: #252b34;
   border-color: #3f4756;
+  }
 }
 .filter-chips button.active {
   background: #ff782d18;
@@ -537,12 +548,14 @@ h1 > span {
   position: relative;
   transition: background 0.18s, border-color 0.18s, transform 0.18s, box-shadow 0.18s;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-}
-.fitter-card:hover {
+}@media (hover: hover) and (pointer: fine) {
+  .fitter-card:hover {
+
   background: #20252e;
   border-color: #454f60;
   transform: translateY(-2px);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+  }
 }
 .fitter-card.nearest-card {
   border-inline-start: 4px solid var(--primary);
@@ -688,21 +701,25 @@ h1 > span {
   background: #252b34;
   border: 1px solid #3b4453;
   color: #f0f3f7;
-}
-.quick-action-btn.call:hover {
+}@media (hover: hover) and (pointer: fine) {
+  .quick-action-btn.call:hover {
+
   background: #323946;
   border-color: #515e73;
   transform: translateY(-1px);
+  }
 }
 .quick-action-btn.whatsapp {
   background: #25d36618;
   border: 1px solid #25d36640;
   color: #43e481;
-}
-.quick-action-btn.whatsapp:hover {
+}@media (hover: hover) and (pointer: fine) {
+  .quick-action-btn.whatsapp:hover {
+
   background: #25d3662c;
   border-color: #25d366;
   transform: translateY(-1px);
+  }
 }
 .panel-footer {
   display: flex;
@@ -773,12 +790,14 @@ h1 > span {
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
   cursor: pointer;
   transition: background 0.18s, transform 0.15s, border-color 0.18s, color 0.18s;
-}
-.map-control-btn:hover {
+}@media (hover: hover) and (pointer: fine) {
+  .map-control-btn:hover {
+
   background: rgba(30, 36, 46, 0.98);
   border-color: var(--primary);
   color: var(--primary);
   transform: scale(1.06);
+  }
 }
 .map-caption {
   position: absolute;
@@ -1229,20 +1248,24 @@ h1 > span {
   background: #25d36618;
   border-color: #25d36644;
   color: #43e481;
-}
-.detail-actions .whatsapp-btn:hover {
+}@media (hover: hover) and (pointer: fine) {
+  .detail-actions .whatsapp-btn:hover {
+
   background: #25d3662d;
   border-color: #25d366;
+  }
 }
 .detail-actions .copy-action {
   background: #202630;
   border-color: #353f4f;
   color: #e2e8f0;
   transition: background 0.2s, border-color 0.2s, color 0.2s;
-}
-.detail-actions .copy-action:hover {
+}@media (hover: hover) and (pointer: fine) {
+  .detail-actions .copy-action:hover {
+
   background: #2b3341;
   border-color: #4b586d;
+  }
 }
 .detail-actions .copy-action.copied {
   background: #11432a;
@@ -1253,10 +1276,12 @@ h1 > span {
   background: #202630;
   border-color: #353f4f;
   color: #e2e8f0;
-}
-.detail-actions .share-action:hover {
+}@media (hover: hover) and (pointer: fine) {
+  .detail-actions .share-action:hover {
+
   background: #2b3341;
   border-color: #4b586d;
+  }
 }
 .demo-note {
   padding: 12px;
@@ -1560,7 +1585,8 @@ h1 > span {
     border-top: 1px solid #4b515a;
     transition: height 0.25s;
     z-index: 500;
-  }
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
   .results-panel.expanded {
     height: 85%;
   }
@@ -1748,10 +1774,12 @@ h1 > span {
   box-shadow: 0 4px 20px rgba(220, 38, 38, 0.35);
   transition: transform 0.15s, box-shadow 0.15s;
   animation: dispatch-pulse-btn 2.5s ease-in-out infinite;
-}
-.dispatch-btn:hover:not(:disabled) {
+}@media (hover: hover) and (pointer: fine) {
+  .dispatch-btn:hover:not(:disabled) {
+
   transform: translateY(-1px);
   box-shadow: 0 6px 24px rgba(220, 38, 38, 0.5);
+  }
 }
 .dispatch-btn:disabled {
   opacity: 0.7;
@@ -1913,10 +1941,12 @@ h1 > span {
   border: 1px solid #30343d !important;
   width: 100%;
   font-size: 0.85rem;
-}
-.dispatch-cancel:hover {
+}@media (hover: hover) and (pointer: fine) {
+  .dispatch-cancel:hover {
+
   color: #aab1bb !important;
   border-color: #3f4550 !important;
+  }
 }
 
 /* Spinner for fitter acceptance page */
@@ -1960,12 +1990,13 @@ h1 > span {
   -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
-}
+}@media (hover: hover) and (pointer: fine) {
+  .fitter-card:hover {
 
-.fitter-card:hover {
   background: rgba(37, 42, 49, 0.75);
   border-color: rgba(255, 120, 45, 0.4);
   box-shadow: 0 8px 32px 0 rgba(255, 120, 45, 0.15);
+  }
 }
 
 .form-panel {
@@ -1986,10 +2017,12 @@ h1 > span {
 
 .button.primary {
   box-shadow: 0 4px 15px rgba(255, 120, 45, 0.3);
-}
-.button.primary:hover {
+}@media (hover: hover) and (pointer: fine) {
+  .button.primary:hover {
+
   box-shadow: 0 6px 20px rgba(255, 120, 45, 0.5);
   transform: translateY(-2px);
+  }
 }
 
 @media (max-width: 640px) {
@@ -2039,10 +2072,12 @@ h1 > span {
   background: rgba(255, 120, 45, 0.15);
   color: var(--primary);
   border: 1px solid rgba(255, 120, 45, 0.3);
-}
-.quick-action-btn.dispatch:hover {
+}@media (hover: hover) and (pointer: fine) {
+  .quick-action-btn.dispatch:hover {
+
   background: var(--primary);
   color: #fff;
+  }
 }
 
 /* ═══════════════════════════════════════════════
@@ -2254,10 +2289,12 @@ h1 > span {
   justify-content: center;
   gap: 8px;
   box-shadow: 0 4px 16px rgba(34, 197, 94, 0.3);
-}
-.accept-btn:hover {
+}@media (hover: hover) and (pointer: fine) {
+  .accept-btn:hover {
+
   box-shadow: 0 6px 24px rgba(34, 197, 94, 0.5);
   transform: translateY(-2px);
+  }
 }
 .decline-btn {
   background: var(--surface-raised, var(--surface));
@@ -2271,10 +2308,12 @@ h1 > span {
   align-items: center;
   justify-content: center;
   gap: 8px;
-}
-.decline-btn:hover {
+}@media (hover: hover) and (pointer: fine) {
+  .decline-btn:hover {
+
   border-color: #ff5555;
   color: #ff5555;
+  }
 }
 .request-hint {
   text-align: center;
@@ -2322,11 +2361,13 @@ h1 > span {
   justify-content: center;
   gap: 8px;
   font-size: 0.9rem;
-}
-.complete-btn:hover {
+}@media (hover: hover) and (pointer: fine) {
+  .complete-btn:hover {
+
   background: #22c55e;
   color: #fff;
   border-color: #22c55e;
+  }
 }
 .completed-card {
   display: flex;

@@ -15,6 +15,7 @@ import { Sun, Moon, LocateFixed, Building2 } from 'lucide-react';
 import type { Fitter } from '@/types';
 import { CENTER } from '@/lib/geo';
 import { useLanguage } from './language';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const pin = (type: string, selected = false) =>
   L.divIcon({
@@ -163,6 +164,7 @@ export default function FitterMap({
   onPick?: (p: [number, number]) => void;
 }) {
   const { t } = useLanguage();
+  const isMobile = useIsMobile();
   const [failed, setFailed] = useState(false);
   // بە شێوەی خۆکار لە ساتی ئێستا دەزانین شەوە یان ڕۆژ
   const [dark, setDark] = useState(() => {
@@ -199,14 +201,16 @@ export default function FitterMap({
             icon={pin(f.type, selected === f.id)}
             eventHandlers={{ click: () => onSelect?.(f.id) }}
           >
-            <Tooltip direction="top" className="map-tooltip">
-              {f.name}
-            </Tooltip>
+            {!isMobile && (
+              <Tooltip direction="top" className="map-tooltip">
+                {f.name}
+              </Tooltip>
+            )}
           </Marker>
         ))}
         {user && (
           <Marker position={user} icon={userMarkerIcon()}>
-            <Tooltip className="map-tooltip">{t.you}</Tooltip>
+            {!isMobile && <Tooltip className="map-tooltip">{t.you}</Tooltip>}
           </Marker>
         )}
         {pick && <Marker position={pick} icon={pin('fixed', true)} />}

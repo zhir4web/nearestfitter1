@@ -3,8 +3,8 @@ import { rate, jsonBody, sameOrigin, failure } from '@/lib/security';
 import {
   createDispatch,
   expireOldDispatches,
-  publicFitters,
   getActiveFitterIds,
+  publicFitters,
 } from '@/lib/repository';
 import { opening } from '@/lib/geo';
 
@@ -77,8 +77,8 @@ export async function POST(req: Request) {
       const d =
         Math.sin(((lat2 - lat1) * r) / 2) ** 2 +
         Math.cos(lat1 * r) *
-          Math.cos(lat2 * r) *
-          Math.sin(((lng2 - lng1) * r) / 2) ** 2;
+        Math.cos(lat2 * r) *
+        Math.sin(((lng2 - lng1) * r) / 2) ** 2;
       return 6371 * 2 * Math.atan2(Math.sqrt(d), Math.sqrt(1 - d));
     }
 
