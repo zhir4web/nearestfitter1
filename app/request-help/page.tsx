@@ -20,10 +20,10 @@ export default function RequestHelpPage() {
 
   if (!lat || !lng) {
     return (
-      <main className="form-page">
-        <div className="form-container">
-          <p className="error" role="alert">{t.dispatchNotice}</p>
-          <Link href="/" className="button">{t.back}</Link>
+      <main className="content-page narrow">
+        <div className="form-panel" style={{ textAlign: 'center', marginTop: '20px' }}>
+          <p className="error" role="alert" style={{ marginBottom: '15px' }}>{t.dispatchNotice}</p>
+          <Link href="/" className="button primary">{t.back}</Link>
         </div>
       </main>
     );
@@ -65,48 +65,43 @@ export default function RequestHelpPage() {
   }
 
   return (
-    <main className="form-page">
+    <main className="content-page narrow">
       <Link href="/" className="back-link">
         <ArrowUpLeft size={18} className={lang === 'en' ? 'rotate-180' : ''} /> {t.back}
       </Link>
-      <div className="form-container">
-        <h1>
-          <AlertTriangle size={24} className="error-icon" style={{color: 'var(--red)'}} />
+      
+      <div className="form-panel" style={{ marginTop: '20px' }}>
+        <h1 style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: 0 }}>
+          <AlertTriangle size={24} color="var(--destructive)" />
           {t.requestHelp}
         </h1>
-        <p className="form-intro" style={{marginTop: '0.5rem'}}>{t.waitingFitterSub}</p>
+        <p className="intro" style={{ marginTop: '5px' }}>{t.waitingFitterSub}</p>
         
         {error && <p className="error" role="alert">{error}</p>}
 
-        <form onSubmit={submit}>
-          <label>
-            <span>{t.phone}</span>
-            <div className="input-group">
-              <Phone size={18} />
-              <input
-                type="tel"
-                required
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder={t.phonePlaceholder}
-                dir="ltr"
-              />
-            </div>
+        <form onSubmit={submit} className="form-grid" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <label className="field full">
+            <span style={{ fontWeight: 600 }}>{t.phone}</span>
+            <input
+              type="tel"
+              required
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder={t.phonePlaceholder}
+              dir="ltr"
+            />
           </label>
-          <label>
-            <span>{t.optional}</span>
-            <div className="input-group">
-              <FileText size={18} />
-              <textarea
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder={t.notePlaceholder}
-                rows={3}
-              />
-            </div>
+          <label className="field full">
+            <span style={{ fontWeight: 600 }}>{t.optional}</span>
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder={t.notePlaceholder}
+              rows={3}
+            />
           </label>
           
-          <button type="submit" className="button primary submit-btn" disabled={loading}>
+          <button type="submit" className="button primary full" disabled={loading} style={{ marginTop: '10px' }}>
             {loading ? <span className="spin">⟳</span> : <AlertTriangle size={17} />}
             {loading ? t.requesting : t.requestHelp}
           </button>
