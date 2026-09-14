@@ -378,6 +378,24 @@ h1 > span {
   color: #d5d9df;
   letter-spacing: -0.5px;
 }
+.search-and-locate {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 10px;
+}
+.search-and-locate .search-field {
+  flex: 1;
+  margin-top: 0;
+}
+.locate-btn {
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
 .search-field {
   display: flex;
   gap: 10px;
@@ -395,16 +413,6 @@ h1 > span {
   color: #fff;
   width: 100%;
   font-size: 14px;
-}
-.locate {
-  width: 100%;
-  margin-top: 10px;
-}
-.locate svg:last-child {
-  margin-inline-start: auto;
-}
-.locate svg:first-child {
-  margin-inline-end: auto;
 }
 .filter-chips {
   display: flex;
@@ -1498,6 +1506,9 @@ h1 > span {
   }
   .brand small {
     font-size: 8px;
+  }
+  .hide-on-mobile {
+    display: none !important;
   }
   nav {
     display: none;

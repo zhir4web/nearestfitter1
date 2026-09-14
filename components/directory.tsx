@@ -197,38 +197,40 @@ export function Directory() {
             </button>
           </div>
 
-          <div className="eyebrow">
+          <div className="eyebrow hide-on-mobile">
             <span className="live-dot" />
             {t.city} <span className="eyebrow-line" /> ROADSIDE ASSISTANCE
           </div>
-          <h1>
+          <h1 className="hide-on-mobile">
             {t.headline}
             <br />
             <span>{t.subline}</span>
           </h1>
-          <div className="search-field">
-            <Search size={20} />
-            <input
-              aria-label={t.search}
-              placeholder={t.search}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-            {query && (
-              <button aria-label={t.clear} onClick={() => setQuery('')}>
-                ×
-              </button>
-            )}
+          <div className="search-and-locate">
+            <div className="search-field">
+              <Search size={20} />
+              <input
+                aria-label={t.search}
+                placeholder={t.search}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+              {query && (
+                <button aria-label={t.clear} onClick={() => setQuery('')}>
+                  ×
+                </button>
+              )}
+            </div>
+            <button
+              type="button"
+              className="button primary locate-btn"
+              onClick={locate}
+              disabled={locating}
+              title={t.locate}
+            >
+              <LocateFixed size={19} className={locating ? 'spin' : ''} />
+            </button>
           </div>
-          <button
-            className="button primary locate"
-            onClick={locate}
-            disabled={locating}
-          >
-            <LocateFixed size={19} className={locating ? 'spin' : ''} />
-            {locating ? t.locating : t.locate}
-            <Navigation size={16} />
-          </button>
           {/* Dispatch request button */}
           {user && (
             <Link
