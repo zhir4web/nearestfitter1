@@ -14,6 +14,7 @@
     "setup": "node scripts/setup.mjs",
     "password": "node scripts/password.mjs",
     "db:setup": "prisma generate && node --env-file=.env scripts/prepare-db.mjs && prisma db push && node --env-file=.env scripts/seed.ts",
+    "db:upgrade": "prisma generate && node --env-file=.env scripts/upgrade-admin-db.mjs",
     "seed": "node --env-file=.env scripts/seed.ts",
     "postinstall": "prisma generate"
   },

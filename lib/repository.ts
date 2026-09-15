@@ -10,6 +10,8 @@ function local() {
   return (globalDb.db ??= new PrismaClient());
 }
 export function remote() {
+  if (!!process.env.SUPABASE_URL !== !!process.env.SUPABASE_SERVICE_ROLE_KEY)
+    throw new Error('Set both SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY');
   return process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
     ? createClient(
         process.env.SUPABASE_URL,
@@ -48,8 +50,7 @@ export async function insert(table: Table, data: Row) {
     if (error) throw error;
     return;
   }
-  const p = local();
-  if (!p) return;
+  const p = database();
   if (table === 'fitters')
     await p.fitter.create({ data: data as Prisma.FitterCreateInput });
   else if (table === 'reviews')
@@ -63,8 +64,7 @@ export async function update(table: Table, id: string, data: Partial<Row>) {
     if (error) throw error;
     return;
   }
-  const p = local();
-  if (!p) return;
+  const p = database();
   if (table === 'fitters')
     await p.fitter.update({
       where: { id },
@@ -88,8 +88,7 @@ export async function remove(table: Table, id: string) {
     if (error) throw error;
     return;
   }
-  const p = local();
-  if (!p) return;
+  const p = database();
   if (table === 'fitters') await p.fitter.delete({ where: { id } });
   else if (table === 'reviews') await p.review.delete({ where: { id } });
   else await p.contact.delete({ where: { id } });
@@ -123,7 +122,7 @@ const ONLINE_TTL = 90_000;
 const hashCode = (code: string) => createHash('sha256').update(code).digest('hex');
 const live = (row: { is_online: boolean; last_seen_at?: string | null }) =>
   row.is_online && !!row.last_seen_at && Date.parse(row.last_seen_at) > Date.now() - ONLINE_TTL;
-function database() {
+export function database() {
   const p = local();
   if (!p) throw new Error('Database not configured');
   return p;
@@ -140,16 +139,16 @@ export async function platformSettings(): Promise<PlatformSettings> {
   if (s) {
     const { data, error } = await s.from('platform_settings').select('commission_percent,commission_fixed_iqd').eq('id', 'platform').maybeSingle();
     if (error) throw error;
-    return data ?? { commission_percent: 10, commission_fixed_iqd: 0 };
+    return { commission_percent: 0, commission_fixed_iqd: data?.commission_fixed_iqd ?? 0 };
   }
   const data = await database().platformSetting.findUnique({ where: { id: 'platform' } });
-  return data ?? { commission_percent: 10, commission_fixed_iqd: 0 };
+  return { commission_percent: 0, commission_fixed_iqd: data?.commission_fixed_iqd ?? 0 };
 }
 export async function savePlatformSettings(data: PlatformSettings) {
   if (!Number.isFinite(data.commission_percent) || data.commission_percent < 0 || data.commission_percent > 100 ||
       !Number.isSafeInteger(data.commission_fixed_iqd) || data.commission_fixed_iqd < 0 || data.commission_fixed_iqd > 1_000_000)
     throw new Error('Invalid commission settings');
-  const record = { ...data, id: 'platform', updated_at: new Date().toISOString() };
+  const record = { ...data, commission_percent: 0, id: 'platform', updated_at: new Date().toISOString() };
   const s = remote();
   if (s) {
     const { error } = await s.from('platform_settings').upsert(record);

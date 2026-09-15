@@ -1,5 +1,6 @@
 import { failure, jsonBody, sameOrigin, rate, HttpError, privateJson } from '@/lib/security';
-import { getDispatchByFitterToken, getFitterByDashboardCode, getDispatchById, transitionDispatch, platformSettings } from '@/lib/repository';
+import { getDispatchByFitterToken, getFitterByDashboardCode, getDispatchById, transitionDispatch } from '@/lib/repository';
+import { acceptWithCharge } from '@/lib/accounts';
 export async function POST(req: Request, { params }: { params: Promise<{ fitterToken: string }> }) {
   try {
     sameOrigin(req);
@@ -13,12 +14,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ fitterT
     const action = body.complete === true ? 'complete' : body.action ?? 'accept';
     let changed = false;
     if (action === 'accept') {
-      const settings = await platformSettings();
-      // Bill the fixed commission immediately upon acceptance.
-      changed = await transitionDispatch(fitterToken, 'fitter', ['pending'], 'accepted', {
-        fitter_id: fitter.fitter_id, accepted_at: new Date().toISOString(),
-        ...settings, commission_iqd: settings.commission_fixed_iqd, commission_status: 'due',
-      });
+      changed = await acceptWithCharge(fitterToken, fitter.fitter_id);
     } else if (action === 'en_route') {
       changed = await transitionDispatch(fitterToken, 'fitter', ['accepted'], 'en_route');
     } else if (action === 'complete') {

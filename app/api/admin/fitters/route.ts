@@ -11,6 +11,7 @@ import {
 import { fitterSchema } from '@/lib/validation';
 import { savePhoto, removePhoto } from '@/lib/photos';
 import type { Fitter } from '@/types';
+import { accountDetail } from '@/lib/accounts';
 
 /** Generate a strong 32-char hex dashboard code (16 random bytes) */
 function newDashboardCode() {
@@ -25,14 +26,19 @@ export async function POST(req: Request) {
     if (Number(req.headers.get('content-length') || 0) > 4500000)
       throw new HttpError(413, 'Too large');
     const form = await formBody(req);
-    const raw = JSON.parse(String(form.get('data')));
+    const formData = form.get('data');
+    if (typeof formData !== 'string') throw new HttpError(400, 'Invalid fitter data');
+    let raw: Record<string, unknown>;
+    try { raw = JSON.parse(formData); }
+    catch { throw new HttpError(400, 'Invalid fitter data'); }
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new HttpError(400, 'Invalid fitter data');
     const parsed = fitterSchema.safeParse(raw);
     if (!parsed.success) {
       console.error('Validation error in admin fitters:', JSON.stringify(parsed.error.issues, null, 2));
       const issueMsg = parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join(', ');
       throw new HttpError(400, `هەڵەی زانیاری: ${issueMsg}`);
     }
-    const { website, ...data } = parsed.data;
+    const { website: _website, ...data } = parsed.data;
     const id = typeof raw.id === 'string' ? raw.id : randomUUID();
     const existing = (await rows<Fitter>('fitters')).find((f) => f.id === id);
     if (raw.id && !existing) throw new HttpError(404, 'Not found');
@@ -95,6 +101,9 @@ export async function DELETE(req: Request) {
     if (typeof id !== 'string') throw new HttpError(400, 'Invalid fitter');
     const f = (await rows<Fitter>('fitters')).find((f) => f.id === id);
     if (!f) throw new HttpError(404, 'Not found');
+    const history = await accountDetail(id);
+    if (history.charges.length || history.settlements.length)
+      throw new HttpError(409, 'ئەم فیتەرە مێژووی حسابی هەیە و ناسڕدرێتەوە. لە دەستکاریدا دۆخەکەی بکە بە چاوەڕوان بۆ ناچالاککردن.');
     await remove('fitters', id);
     if (f.photo_url) await removePhoto(f.photo_url);
     return Response.json({ ok: true });

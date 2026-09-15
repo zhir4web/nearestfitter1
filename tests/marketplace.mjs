@@ -2,18 +2,20 @@ import assert from 'node:assert/strict';
 import { randomBytes, createHash } from 'node:crypto';
 import { PrismaClient } from '@prisma/client';
 
-if (!process.env.DATABASE_URL?.includes('qa.db')) throw new Error('Use an isolated qa.db for this test.');
+if (!/qa(?:-admin)?\.db$/.test(process.env.DATABASE_URL || '')) throw new Error('Use an isolated qa.db or qa-admin.db for this test.');
 const db = new PrismaClient();
 const base = process.env.TEST_BASE_URL || 'http://localhost:3100';
 const id = `qa-${randomBytes(6).toString('hex')}`, code = randomBytes(24).toString('hex');
 let cookie = '', postId;
 const hash = value => createHash('sha256').update(value).digest('hex');
 async function request(path, body, method = body ? 'POST' : 'GET', admin = false) {
-  return fetch(base + '/api' + path, {method, headers: {'Content-Type':'application/json', Origin:base, ...(admin ? {Cookie:cookie} : {})}, ...(body ? {body:JSON.stringify(body)} : {})});
+  return fetch(base + '/api' + path, {method, headers: {'Content-Type':'application/json', Origin:base, 'x-forwarded-for':id, ...(admin ? {Cookie:cookie} : {})}, ...(body ? {body:JSON.stringify(body)} : {})});
 }
 async function json(response) { assert.ok(response.ok, `${response.status}: ${await response.clone().text()}`); return response.json(); }
 function pass(label) { console.log('PASS', label); }
 try {
+  const auth=await request('/admin/session',{password:process.env.TEST_ADMIN_PASSWORD});await json(auth);cookie=auth.headers.get('set-cookie').split(';')[0];
+  const acceptanceFee=(await json(await request('/admin/settings',undefined,'GET',true))).commission_fixed_iqd;
   await db.fitter.create({data:{id,name:'QA fitter',type:'mobile',phone:'+9647700000000',latitude:35.56,longitude:45.43,neighborhood:'QA',services:['puncture'],working_hours:Array.from({length:7},()=>({closed:false,allDay:true,open:'00:00',close:'23:59'})),status:'approved',demo:false,created_at:new Date().toISOString()}});
   await db.fitterDashboard.create({data:{id:id+'-dash',fitter_id:id,code:hash(code),created_at:new Date().toISOString()}});
   await json(await request('/fitter/location',{fitter_code:code,is_online:true,lat:35.56,lng:45.43}));
@@ -37,7 +39,7 @@ try {
   await json(await request('/dispatch/accept/'+token,{fitter_code:code,action:'complete',final_price_iqd:20000}));
   const result=await json(await request('/dispatch/'+booking.user_token));
   assert.equal(result.status,'completed');
-  assert.equal(result.commission_iqd,2000);
+  assert.equal(result.commission_iqd,acceptanceFee);
   assert.ok(!('fitter_token' in result));
   pass('Accept, en route, complete and commission are persisted; repeated accept rejected');
   const another=await json(await request('/dispatch',input));
@@ -60,6 +62,8 @@ try {
   pass('Ratings require admin moderation');
 } finally {
   if(postId) await db.communityPost.deleteMany({where:{id:postId}});
+  await db.accountCharge.deleteMany({where:{fitter_id:id}});
+  await db.accountSettlement.deleteMany({where:{fitter_id:id}});
   await db.fitter.deleteMany({where:{id}});
   await db.$disconnect();
 }

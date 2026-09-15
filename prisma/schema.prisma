@@ -25,6 +25,8 @@ model Fitter {
  dispatches DispatchRequest[]
  dashboard FitterDashboard?
  community_replies CommunityReply[]
+ account_charges AccountCharge[]
+ account_settlements AccountSettlement[]
  @@index([status])
  @@map("fitters")
 }
@@ -79,6 +81,7 @@ model DispatchRequest {
  final_price_iqd Int?
  commission_iqd  Int?
  commission_status String @default("none")
+ account_charge AccountCharge?
  @@index([fitter_token])
  @@index([user_token])
  @@index([status, created_at])
@@ -99,10 +102,35 @@ model FitterDashboard {
 }
 model PlatformSetting {
  id String @id @default("platform")
- commission_percent Float @default(10)
+ commission_percent Float @default(0)
  commission_fixed_iqd Int @default(0)
  updated_at String
  @@map("platform_settings")
+}
+model AccountCharge {
+ id String @id
+ dispatch_id String @unique
+ dispatch DispatchRequest @relation(fields:[dispatch_id],references:[id],onDelete:Restrict)
+ fitter_id String
+ fitter Fitter @relation(fields:[fitter_id],references:[id],onDelete:Restrict)
+ amount_iqd Int
+ created_at String
+ settlement_id String?
+ settlement AccountSettlement? @relation(fields:[settlement_id],references:[id],onDelete:Restrict)
+ @@index([fitter_id,settlement_id])
+ @@map("account_charges")
+}
+model AccountSettlement {
+ id String @id
+ fitter_id String
+ fitter Fitter @relation(fields:[fitter_id],references:[id],onDelete:Restrict)
+ amount_iqd Float
+ job_count Int
+ note String @default("")
+ created_at String
+ charges AccountCharge[]
+ @@index([fitter_id,created_at])
+ @@map("account_settlements")
 }
 model CommunityPost {
  id String @id
