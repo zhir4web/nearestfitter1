@@ -53,7 +53,13 @@ export async function requireAdmin() {
 }
 export function sameOrigin(req: Request) {
   const origin = req.headers.get('origin');
-  if (!origin || new URL(origin).host !== req.headers.get('host'))
+  let accepted = false;
+  try {
+    const parsed = new URL(origin || '');
+    const target = new URL(req.url);
+    accepted = parsed.origin === target.origin && !parsed.username && !parsed.password;
+  } catch { /* Invalid or missing Origin is rejected. */ }
+  if (!accepted)
     throw new HttpError(403, 'Origin rejected');
 }
 export async function rate(
@@ -99,10 +105,16 @@ async function boundedBody(req: Request, max: number) {
 export async function jsonBody(req: Request) {
   const body = await boundedBody(req, 25000);
   try {
-    return JSON.parse(new TextDecoder().decode(body));
+    const value = JSON.parse(new TextDecoder().decode(body));
+    if (!value || typeof value !== 'object' || Array.isArray(value))
+      throw new Error('Object required');
+    return value as Record<string, unknown>;
   } catch {
     throw new HttpError(400, 'Invalid request');
   }
+}
+export function privateJson(value: unknown, status = 200) {
+  return Response.json(value, { status, headers: { 'Cache-Control': 'private, no-store', 'Referrer-Policy': 'no-referrer' } });
 }
 export async function formBody(req: Request) {
   const body = await boundedBody(req, 4500000);

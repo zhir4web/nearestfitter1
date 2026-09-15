@@ -54,7 +54,7 @@ export async function POST(req: Request) {
       await insert('fitters', record);
       // Auto-create dashboard for new fitters (approved or pending)
       dashboard_code = newDashboardCode();
-      try { await createFitterDashboard(id, dashboard_code); } catch { /* non-fatal */ }
+      await createFitterDashboard(id, dashboard_code);
     }
     if (existing?.photo_url && existing.photo_url !== record.photo_url)
       await removePhoto(existing.photo_url);
@@ -69,12 +69,14 @@ export async function PATCH(req: Request) {
   try {
     sameOrigin(req);
     await requireAdmin();
-    const { id } = await jsonBody(req);
+    const { id, rotate_dashboard } = await jsonBody(req);
     if (typeof id !== 'string') throw new HttpError(400, 'Invalid ID');
-    await update('fitters', id, { status: 'approved' });
+    const fitter = (await rows<Fitter>('fitters')).find(f => f.id === id);
+    if (!fitter) throw new HttpError(404, 'Not found');
+    if (rotate_dashboard !== true) await update('fitters', id, { status: 'approved' });
     // Ensure a dashboard exists — create one if missing
     const code = newDashboardCode();
-    try { await createFitterDashboard(id, code); } catch { /* dashboard may already exist */ }
+    await createFitterDashboard(id, code);
     return Response.json({ ok: true, dashboard_code: code });
   } catch (e) {
     return failure(e);
@@ -86,6 +88,7 @@ export async function DELETE(req: Request) {
     sameOrigin(req);
     await requireAdmin();
     const { id } = await jsonBody(req);
+    if (typeof id !== 'string') throw new HttpError(400, 'Invalid fitter');
     const f = (await rows<Fitter>('fitters')).find((f) => f.id === id);
     if (!f) throw new HttpError(404, 'Not found');
     await remove('fitters', id);

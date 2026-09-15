@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { ShieldCheck, Plus, LogOut, Check, Trash2, Pencil } from 'lucide-react';
+import { ShieldCheck, Plus, LogOut, Check, Trash2, Pencil, DollarSign, SlidersHorizontal, RotateCw } from 'lucide-react';
 import { useLanguage } from './language';
 import { Footer } from './header';
 import { FitterForm } from './fitter-form';
@@ -22,7 +22,7 @@ import {
   AlertDialogCancel,
 } from '@/components/ui/alert-dialog';
 import type { Fitter, Review, Contact } from '@/types';
-type Data = { fitters: Fitter[]; reviews: Review[]; contacts: Contact[] };
+type Data = { fitters: Fitter[]; reviews: Review[]; contacts: Contact[]; dispatches?: Array<{ id: string; fitter_id: string; status: string; created_at: string; final_price_iqd?: number | null; commission_iqd?: number | null; commission_status?: string }>; settings?: { commission_percent: number; commission_fixed_iqd: number } };
 export function Admin() {
   const { t, lang } = useLanguage();
   const [auth, setAuth] = useState(false);
@@ -41,6 +41,9 @@ export function Admin() {
   }>();
   const [tab, setTab] = useState('fitters');
   const [dashCode, setDashCode] = useState<string>();
+  const [commissionPercent, setCommissionPercent] = useState(10);
+  const [commissionFixed, setCommissionFixed] = useState(0);
+  const [settingsBusy, setSettingsBusy] = useState(false);
   async function load() {
     setLoading(true);
     setError('');
@@ -52,7 +55,10 @@ export function Admin() {
       if (s.authenticated) {
         const r = await fetch('/api/admin/data');
         if (!r.ok) throw Error();
-        setData(await r.json());
+        const payload = await r.json() as Data;
+        setData(payload);
+        setCommissionPercent(payload.settings?.commission_percent ?? 10);
+        setCommissionFixed(payload.settings?.commission_fixed_iqd ?? 0);
       }
     } catch {
       setError(t.error);
@@ -95,6 +101,16 @@ export function Admin() {
     } finally {
       setBusy(false);
     }
+  }
+  async function saveSettings() {
+    setSettingsBusy(true); setError('');
+    try {
+      const response = await fetch('/api/admin/settings', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ commission_percent: commissionPercent, commission_fixed_iqd: commissionFixed }) });
+      if (!response.ok) throw new Error();
+      const settings = await response.json();
+      setData((current) => ({ ...current, settings }));
+    } catch { setError(t.error); }
+    finally { setSettingsBusy(false); }
   }
   async function action(
     table: 'fitters' | 'reviews' | 'contacts',
@@ -251,6 +267,9 @@ export function Admin() {
               <TabsTrigger value="contacts">
                 {t.inbox} ({data.contacts.length})
               </TabsTrigger>
+              <TabsTrigger value="settings">
+                <SlidersHorizontal size={14} /> کۆمیشن و ڕێکخستن
+              </TabsTrigger>
             </TabsList>
             {['fitters', 'pending'].map((key) => (
               <TabsContent key={key} value={key}>
@@ -398,6 +417,13 @@ export function Admin() {
               ) : (
                 <p className="empty">{t.noData}</p>
               )}
+            </TabsContent>
+            <TabsContent value="settings">
+              <section className="admin-settings-panel">
+                <div className="admin-settings-heading"><span className="admin-settings-icon"><DollarSign size={19} /></span><div><h2>کۆمیشنی پلاتفۆرم</h2><p>ڕێژەی کۆمیشن دوای تەواوبوونی کار تۆمار دەکرێت؛ هیچ پارەدانێک لەم پەڕەیەدا ناکرێت.</p></div></div>
+                <div className="admin-settings-fields"><label>ڕێژەی سەدی (%)<input type="number" min="0" max="100" step="0.1" value={commissionPercent} onChange={(event) => setCommissionPercent(Number(event.target.value))} /></label><label>بڕی جێگیر (دینار)<input type="number" min="0" max="1000000" step="1000" value={commissionFixed} onChange={(event) => setCommissionFixed(Number(event.target.value))} /></label><button className="button primary" onClick={() => void saveSettings()} disabled={settingsBusy}><Check size={15} />{settingsBusy ? t.sending : 'پاشەکەوتکردن'}</button></div>
+                {!!data.dispatches?.length && <div className="admin-dispatch-history"><h3>کارەکانی دوایی</h3>{data.dispatches.slice(0, 10).map((job) => <div className="admin-dispatch-row" key={job.id}><span>{data.fitters.find((f) => f.id === job.fitter_id)?.name || 'فیتەر'}<small>{job.status}</small></span><time>{new Date(job.created_at).toLocaleDateString(lang === 'en' ? 'en-GB' : 'ar-IQ')}</time><strong>{job.final_price_iqd ? `${job.final_price_iqd.toLocaleString()} IQD` : '—'}</strong><em>{job.commission_iqd ? `${job.commission_iqd.toLocaleString()} IQD` : '—'}</em></div>)}</div>}
+              </section>
             </TabsContent>
           </Tabs>
         </>

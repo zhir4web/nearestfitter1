@@ -32,6 +32,7 @@ export type Fitter = {
   rating?: number;
   review_count?: number;
   is_busy?: boolean;
+  is_online?: boolean;
 };
 export type Review = {
   id: string;
@@ -55,6 +56,7 @@ export type DispatchStatus =
   | 'accepted'
   | 'en_route'
   | 'completed'
+  | 'cancelled'
   | 'declined'
   | 'expired'
   | 'reassigning';
@@ -81,4 +83,3 @@ export type FitterDashboard = {
   code: string;
   created_at: string;
 };
-

@@ -65,3 +65,53 @@ $$;
 revoke all on function public.hit_rate_limit(text,bigint,bigint) from public,anon,authenticated;
 grant execute on function public.hit_rate_limit(text,bigint,bigint) to service_role;
 insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types) values('fitter-photos','fitter-photos',false,4194304,array['image/webp']) on conflict(id) do nothing;
+
+-- Upgrade existing installations before deploying the marketplace release.
+alter table public.dispatch_requests drop constraint if exists dispatch_requests_status_check;
+alter table public.dispatch_requests add constraint dispatch_requests_status_check
+  check(status in ('pending','accepted','en_route','completed','declined','expired','reassigning','cancelled'));
+alter table public.dispatch_requests add column if not exists active_slot text;
+alter table public.dispatch_requests add column if not exists commission_percent double precision not null default 0;
+alter table public.dispatch_requests add column if not exists commission_fixed_iqd integer not null default 0;
+alter table public.dispatch_requests add column if not exists final_price_iqd integer;
+alter table public.dispatch_requests add column if not exists commission_iqd integer;
+alter table public.dispatch_requests add column if not exists commission_status text not null default 'none';
+alter table public.fitter_dashboards add column if not exists last_seen_at text;
+-- This fails safely if an old installation contains duplicate active jobs; resolve
+-- those existing assignments before retrying, rather than silently deleting them.
+update public.dispatch_requests set active_slot=fitter_id where status in ('pending','accepted','en_route');
+create unique index if not exists dispatch_active_slot on public.dispatch_requests(active_slot);
+create table if not exists public.platform_settings (
+  id text primary key default 'platform',
+  commission_percent double precision not null default 10 check(commission_percent between 0 and 100),
+  commission_fixed_iqd integer not null default 0 check(commission_fixed_iqd between 0 and 1000000),
+  updated_at text not null
+);
+alter table public.platform_settings enable row level security;
+-- Existing private portal links must be rotated once in admin after upgrade.
+-- New portal codes are SHA-256 digests at rest and are returned only at issuance.
+
+-- Community questions are public after submission. Owner tokens are stored only
+-- as SHA-256 digests; fitter replies are linked to approved private dashboards.
+create table if not exists public.community_posts (
+  id text primary key,
+  author_name text not null,
+  title text not null,
+  car_model text not null,
+  neighborhood text not null,
+  body text not null,
+  status text not null default 'open' check(status in ('open','resolved','hidden')),
+  owner_hash text not null,
+  created_at text not null
+);
+create index if not exists community_posts_created on public.community_posts(created_at desc);
+create table if not exists public.community_replies (
+  id text primary key,
+  post_id text not null references public.community_posts(id) on delete cascade,
+  fitter_id text not null references public.fitters(id) on delete cascade,
+  body text not null,
+  created_at text not null
+);
+create index if not exists community_replies_post on public.community_replies(post_id,created_at);
+alter table public.community_posts enable row level security;
+alter table public.community_replies enable row level security;

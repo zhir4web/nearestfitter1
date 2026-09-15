@@ -1,4 +1,4 @@
-import { Directory } from '@/components/directory';
+import { HomeDashboard } from '@/components/marketplace';
 export default function Home() {
-  return <Directory />;
+  return <HomeDashboard />;
 }

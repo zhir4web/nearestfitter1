@@ -128,7 +128,7 @@ function MapActions({ user }: { user?: [number, number] }) {
 
 // تایلەکان بەپێی دۆخی ڕووناکی یان تاریکی دەگۆڕێن
 const OSM_ATTRIB =
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
 export default function FitterMap({
   fitters = [],
@@ -159,9 +159,10 @@ export default function FitterMap({
     return () => observer.disconnect();
   }, []);
 
-  const tileUrl = isDark 
-    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-    : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+  // The standard OSM tile endpoint keeps the public map keyless. The dark
+  // treatment is applied to the map surface with CSS, so both themes use the
+  // same documented tiles and attribution.
+  const tileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 
   return (
     <div className={`map-inner ${isDark ? 'map-dark' : 'map-light'}`}>

@@ -1,18 +1,15 @@
 'use client';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import {
-  Phone,
-  MessageCircle,
   Navigation,
+  AlertTriangle,
   MapPin,
   Store,
   Truck,
   X,
   Star,
-  Copy,
-  Check,
-  Share2,
 } from 'lucide-react';
 import {
   Sheet,
@@ -24,14 +21,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useLanguage } from './language';
 import { distance, opening } from '@/lib/geo';
 import type { Fitter, Review } from '@/types';
-function international(phone: string) {
-  const clean = phone.replace(/[^0-9+]/g, '');
-  return clean.startsWith('0')
-    ? '+964' + clean.slice(1)
-    : clean.startsWith('+')
-      ? clean
-      : '+' + clean;
-}
 export function Detail({
   fitter: f,
   user,
@@ -50,23 +39,6 @@ export function Detail({
   const [success, setSuccess] = useState(false);
   const [rating, setRating] = useState(5);
   const [now, setNow] = useState(new Date());
-  const [copied, setCopied] = useState(false);
-
-  function copyPhone() {
-    if (!f.phone) return;
-    navigator.clipboard.writeText(f.phone);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }
-
-  function shareFitter() {
-    const text = `${t.shareText}\n🔧 ${f.name}\n📍 ${f.neighborhood}\n📞 ${f.phone}\n🗺️ https://www.google.com/maps/dir/?api=1&destination=${f.latitude},${f.longitude}`;
-    if (typeof navigator !== 'undefined' && navigator.share) {
-      navigator.share({ title: f.name, text, url: window.location.href }).catch(() => {});
-    } else {
-      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-    }
-  }
   async function load() {
     setLoadError(false);
     setLoading(true);
@@ -183,42 +155,11 @@ export function Detail({
             <p className="demo-note">{t.demoNotice}</p>
           )}
           <div className="detail-actions">
-              <a
-                className="button primary"
-                href={'tel:' + international(f.phone)}
-              >
-                <Phone size={18} />
-                {t.call}
-              </a>
-              {f.whatsapp && (
-                <a
-                  className="button whatsapp-btn"
-                  href={
-                    'https://wa.me/' +
-                    international(f.whatsapp).replace('+', '') +
-                    '?text=' +
-                    encodeURIComponent(
-                      t.whatsappPrefill.replace(
-                        '[NEIGHBORHOOD]',
-                        f.neighborhood || t.city,
-                      ),
-                    )
-                  }
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <MessageCircle size={18} />
-                  {t.whatsapp}
-                </a>
-              )}
-              {f.phone2 && (
-                <a
-                  className="button"
-                  href={'tel:' + international(f.phone2)}
-                  dir="ltr"
-                >
-                  {f.phone2}
-                </a>
+              {!f.demo && user && status.open && (
+                <Link className="button primary" href={`/request-help?lat=${user[0]}&lng=${user[1]}&fitter=${encodeURIComponent(f.id)}`}>
+                  <AlertTriangle size={18} />
+                  {t.requestHelp}
+                </Link>
               )}
               <a
                 className="button directions"
@@ -229,27 +170,6 @@ export function Detail({
                 <Navigation size={18} />
                 {t.directions}
               </a>
-              <button
-                type="button"
-                className={'button copy-action ' + (copied ? 'copied' : '')}
-                onClick={copyPhone}
-                title={t.copyPhone}
-              >
-                {copied ? <Check size={18} /> : <Copy size={18} />}
-                {copied ? t.copied : t.copyPhone}
-              </button>
-              <button
-                type="button"
-                className="button share-action"
-                onClick={shareFitter}
-                title={t.shareWhatsApp}
-              >
-                <Share2 size={18} />
-                {t.shareWhatsApp}
-              </button>
-              <p className="help full" dir="ltr">
-                {f.phone}
-              </p>
             </div>
           <section className="form-section">
             <h2 className="field-title">{t.services}</h2>

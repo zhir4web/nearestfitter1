@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { LanguageProvider } from '@/components/language';
 import { Header } from '@/components/header';
+import { PreferencesProvider } from '@/components/preferences';
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -56,8 +57,10 @@ export default function RootLayout({
       </head>
       <body>
         <LanguageProvider>
-          <Header />
-          {children}
+          <PreferencesProvider>
+            <Header />
+            {children}
+          </PreferencesProvider>
         </LanguageProvider>
       </body>
     </html>

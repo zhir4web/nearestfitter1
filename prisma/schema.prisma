@@ -24,6 +24,7 @@ model Fitter {
  reviews Review[]
  dispatches DispatchRequest[]
  dashboard FitterDashboard?
+ community_replies CommunityReply[]
  @@index([status])
  @@map("fitters")
 }
@@ -72,6 +73,12 @@ model DispatchRequest {
  completed_at    String?
  fitter_lat      Float?
  fitter_lng      Float?
+ active_slot     String? @unique
+ commission_percent Float @default(0)
+ commission_fixed_iqd Int @default(0)
+ final_price_iqd Int?
+ commission_iqd  Int?
+ commission_status String @default("none")
  @@index([fitter_token])
  @@index([user_token])
  @@index([status, created_at])
@@ -86,6 +93,39 @@ model FitterDashboard {
  is_online   Boolean @default(false)
  current_lat Float?
  current_lng Float?
+ last_seen_at String?
  @@index([code])
  @@map("fitter_dashboards")
+}
+model PlatformSetting {
+ id String @id @default("platform")
+ commission_percent Float @default(10)
+ commission_fixed_iqd Int @default(0)
+ updated_at String
+ @@map("platform_settings")
+}
+model CommunityPost {
+ id String @id
+ author_name String
+ title String
+ car_model String
+ neighborhood String
+ body String
+ status String @default("open")
+ owner_hash String
+ created_at String
+ replies CommunityReply[]
+ @@index([created_at], map: "community_posts_created")
+ @@map("community_posts")
+}
+model CommunityReply {
+ id String @id
+ post_id String
+ post CommunityPost @relation(fields: [post_id], references: [id], onDelete: Cascade)
+ fitter_id String
+ fitter Fitter @relation(fields: [fitter_id], references: [id], onDelete: Cascade)
+ body String
+ created_at String
+ @@index([post_id], map: "community_replies_post")
+ @@map("community_replies")
 }

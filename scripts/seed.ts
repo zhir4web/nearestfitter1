@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { createClient } from '@supabase/supabase-js';
 
-import { mockFitters } from '../lib/mock-data';
+import { mockFitters } from '../lib/mock-data.ts';
 
 async function runSeed() {
   if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
@@ -22,8 +22,7 @@ async function runSeed() {
   } else {
     const p = new PrismaClient();
     // Clear existing demo fitters first
-    await p.review.deleteMany({});
-    await p.fitter.deleteMany({});
+    await p.fitter.deleteMany({ where: { demo: true } });
 
     for (const item of mockFitters) {
       const { reviews, ...fitterData } = item;

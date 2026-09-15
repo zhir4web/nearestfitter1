@@ -1,19 +1,11 @@
-import { rows } from '@/lib/repository';
-import { requireAdmin, failure } from '@/lib/security';
-
+import { rows, dispatchHistory, platformSettings } from '@/lib/repository';
+import { requireAdmin, failure, privateJson } from '@/lib/security';
 export async function GET() {
   try {
     await requireAdmin();
-    const fitters = await rows('fitters');
-    const reviews = await rows('reviews');
-    const contacts = await rows('contacts');
-    
-    return Response.json({
-      fitters: fitters || [],
-      reviews: reviews || [],
-      contacts: contacts || []
-    });
-  } catch (e) {
-    return failure(e);
-  }
+    const [fitters, reviews, contacts, dispatches, settings] = await Promise.all([
+      rows('fitters'), rows('reviews'), rows('contacts'), dispatchHistory(), platformSettings(),
+    ]);
+    return privateJson({ fitters, reviews, contacts, dispatches, settings });
+  } catch (e) { return failure(e); }
 }

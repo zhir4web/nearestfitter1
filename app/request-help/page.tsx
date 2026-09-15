@@ -1,112 +1,20 @@
 'use client';
-import { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowUpLeft, AlertTriangle, Phone, FileText } from 'lucide-react';
-import { useLanguage } from '@/components/language';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
+import { AlertTriangle, ArrowLeft, ArrowRight, CheckCircle2, Crosshair, LocateFixed, MapPin, ShieldCheck } from 'lucide-react';
+import { useLanguage } from '@/components/language';
+import { usePreferences } from '@/components/preferences';
+import { appCopy } from '@/lib/app-copy';
+const FitterMap = dynamic(() => import('@/components/map'), { ssr: false, loading: () => <div className="nf-map-loading"><span /></div> });
 
-export default function RequestHelpPage() {
-  const { t, lang } = useLanguage();
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  
-  const lat = searchParams.get('lat');
-  const lng = searchParams.get('lng');
-  
-  const [phone, setPhone] = useState('');
-  const [note, setNote] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  if (!lat || !lng) {
-    return (
-      <main className="content-page narrow">
-        <div className="form-panel" style={{ textAlign: 'center', marginTop: '20px' }}>
-          <p className="error" role="alert" style={{ marginBottom: '15px' }}>{t.dispatchNotice}</p>
-          <Link href="/" className="button primary">{t.back}</Link>
-        </div>
-      </main>
-    );
-  }
-
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (phone.length < 5) return;
-    setLoading(true);
-    setError('');
-
-    try {
-      const res = await fetch('/api/dispatch', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          user_lat: parseFloat(lat!), 
-          user_lng: parseFloat(lng!),
-          user_phone: phone,
-          user_note: note
-        }),
-      });
-      const data = await res.json();
-      
-      if (!res.ok) {
-        if (res.status === 404) {
-          setError(t.noFittersOpen);
-        } else {
-          throw new Error(data.error || 'Request failed');
-        }
-      } else {
-        router.push(`/request-status/${data.user_token}`);
-      }
-    } catch {
-      setError(t.error);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <main className="content-page narrow">
-      <Link href="/" className="back-link">
-        <ArrowUpLeft size={18} className={lang === 'en' ? 'rotate-180' : ''} /> {t.back}
-      </Link>
-      
-      <div className="form-panel" style={{ marginTop: '20px' }}>
-        <h1 style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: 0 }}>
-          <AlertTriangle size={24} color="var(--destructive)" />
-          {t.requestHelp}
-        </h1>
-        <p className="intro" style={{ marginTop: '5px' }}>{t.waitingFitterSub}</p>
-        
-        {error && <p className="error" role="alert">{error}</p>}
-
-        <form onSubmit={submit} className="form-grid" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <label className="field full">
-            <span style={{ fontWeight: 600 }}>{t.phone}</span>
-            <input
-              type="tel"
-              required
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder={t.phonePlaceholder}
-              dir="ltr"
-            />
-          </label>
-          <label className="field full">
-            <span style={{ fontWeight: 600 }}>{t.optional}</span>
-            <textarea
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder={t.notePlaceholder}
-              rows={3}
-            />
-          </label>
-          
-          <button type="submit" className="button primary full" disabled={loading} style={{ marginTop: '10px' }}>
-            {loading ? <span className="spin">⟳</span> : <AlertTriangle size={17} />}
-            {loading ? t.requesting : t.requestHelp}
-          </button>
-        </form>
-      </div>
-    </main>
-  );
+export default function RequestHelpPage() { return <Suspense fallback={<div className="nf-map-loading" />}><RequestHelpContent /></Suspense>; }
+function RequestHelpContent() {
+  const { t, lang } = useLanguage(); const copy = appCopy[lang]; const params = useSearchParams(); const router = useRouter(); const { user, locate, locating } = usePreferences();
+  const [position, setPosition] = useState<[number, number] | undefined>(); const [phone, setPhone] = useState(''); const [note, setNote] = useState(''); const [loading, setLoading] = useState(false); const [error, setError] = useState('');
+  useEffect(() => { if (!params.has('lat') || !params.has('lng')) return; const lat = Number(params.get('lat')); const lng = Number(params.get('lng')); if (Number.isFinite(lat) && Number.isFinite(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) setPosition([lat, lng]); }, [params]);
+  useEffect(() => { if (user && !position) setPosition(user); }, [user, position]);
+  async function submit(event: React.FormEvent) { event.preventDefault(); if (!position) { setError(lang === 'en' ? 'Choose your location first.' : lang === 'ar' ? 'حدد موقعك أولاً.' : 'سەرەتا شوێنەکەت دیاری بکە.'); return; } setLoading(true); setError(''); try { const response = await fetch('/api/dispatch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_lat: position[0], user_lng: position[1], user_phone: phone, user_note: note, fitter_id: params.get('fitter') || undefined }) }); const data = await response.json(); if (!response.ok) throw new Error(response.status === 404 ? (lang === 'en' ? 'No available fitter nearby right now.' : lang === 'ar' ? 'لا يوجد فني متاح قريباً الآن.' : 'هیچ فیتەرێکی بەردەست لە نزیکت نییە.') : data.error); router.push(`/request-status/${data.user_token}`); } catch (err) { setError(err instanceof Error ? err.message : t.error); } finally { setLoading(false); } }
+  return <main id="main-content" className="nf-main"><div className="nf-shell nf-page-top"><Link className="nf-back-link" href="/">{lang === 'en' ? <ArrowLeft size={16} /> : <ArrowRight size={16} />}{t.back}</Link><div><span className="nf-eyebrow"><AlertTriangle size={14} />{copy.help}</span><h1>{copy.request}</h1><p>{copy.helpText}</p></div></div><section className="nf-shell nf-request-layout"><div className="nf-request-map"><div className="nf-request-map-head"><div><h2>{lang === 'en' ? 'Where should we come?' : lang === 'ar' ? 'أين نصل إليك؟' : 'لە کوێوە بێین بۆ لات؟'}</h2><p>{position ? `${position[0].toFixed(5)}, ${position[1].toFixed(5)}` : (lang === 'en' ? 'Tap the map or use your current location' : lang === 'ar' ? 'اضغط الخريطة أو استخدم موقعك الحالي' : 'لەسەر نەخشە دابگرە یان شوێنی ئێستات بەکاربهێنە')}</p></div><button type="button" className="nf-button ghost small" onClick={locate} disabled={locating}><LocateFixed size={15} />{locating ? t.locating : t.locate}</button></div><div className="nf-request-map-canvas"><FitterMap fitters={[]} pick={position} onPick={setPosition} /></div><div className="nf-location-hint"><Crosshair size={15} />{lang === 'en' ? 'Your exact phone number is shared only after a fitter accepts.' : lang === 'ar' ? 'يُشارك رقمك فقط بعد قبول الفني.' : 'ژمارەکەت تەنها دوای قبوڵکردنی فیتەر هاوبەش دەکرێت.'}</div></div><form className="nf-request-form" onSubmit={submit}><div className="nf-form-title"><span className="nf-quick-icon"><ShieldCheck size={19} /></span><div><h2>{lang === 'en' ? 'A private request' : lang === 'ar' ? 'طلب خاص' : 'داواکارییەکی تایبەت'}</h2><p>{copy.private}</p></div></div><label className="nf-request-label">{t.phone}<input type="tel" dir="ltr" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder={lang === 'en' ? '+964 7xx xxx xxxx' : '٠٧٧٠ ٠٠٠ ٠٠٠٠'} required minLength={7} maxLength={22} /></label><label className="nf-request-label">{t.optional}<textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder={t.notePlaceholder} rows={4} maxLength={500} /></label>{error && <p className="nf-inline-error" role="alert">{error}</p>}<button className="nf-button primary" disabled={loading || !position}><AlertTriangle size={17} />{loading ? t.requesting : copy.request}</button><p className="nf-form-foot"><ShieldCheck size={14} />{copy.private}</p></form></section></main>;
 }

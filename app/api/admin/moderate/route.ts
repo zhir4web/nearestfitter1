@@ -12,9 +12,9 @@ export async function POST(req: Request) {
     await requireAdmin();
     const { table, id, action } = await jsonBody(req);
     if (
-      !['reviews', 'contacts'].includes(table) ||
+      (table !== 'reviews' && table !== 'contacts') ||
       typeof id !== 'string' ||
-      !['approve', 'delete'].includes(action)
+      (action !== 'approve' && action !== 'delete')
     )
       throw new HttpError(400, 'Invalid request');
     if (action === 'approve') {
