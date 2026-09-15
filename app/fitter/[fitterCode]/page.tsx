@@ -2,24 +2,595 @@
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { use, useCallback, useEffect, useRef, useState } from 'react';
-import { AlertCircle, Check, CheckCircle2, Clock3, DollarSign, MapPin, Navigation, Power, ShieldCheck, Truck, Wifi, WifiOff, X } from 'lucide-react';
+import {
+  AlertCircle,
+  Check,
+  CheckCircle2,
+  Clock3,
+  DollarSign,
+  MapPin,
+  Navigation,
+  Power,
+  ShieldCheck,
+  Truck,
+  Wifi,
+  WifiOff,
+  X,
+} from 'lucide-react';
 import { useLanguage } from '@/components/language';
 import { Community } from '@/components/community';
-const DispatchMap = dynamic(() => import('@/components/dispatch-map'), { ssr: false });
-type RequestData = { id: string; user_lat: number; user_lng: number; user_note: string; user_phone?: string; fitter_token: string; expires_at: string; created_at: string; status: 'pending' | 'accepted' | 'en_route' };
-type Dashboard = { fitter: { fitter_id: string; fitter_name: string; fitter_type: string; is_online: boolean }; request: RequestData | null; jobs: Array<{ id: string; status: string; created_at: string; final_price_iqd?: number | null; commission_iqd?: number | null }>; settings: { commission_percent: number; commission_fixed_iqd: number } };
+const DispatchMap = dynamic(() => import('@/components/dispatch-map'), {
+  ssr: false,
+});
+type RequestData = {
+  id: string;
+  user_lat: number;
+  user_lng: number;
+  user_note: string;
+  user_phone?: string;
+  fitter_token: string;
+  expires_at: string;
+  created_at: string;
+  status: 'pending' | 'accepted' | 'en_route';
+};
+type Dashboard = {
+  fitter: {
+    fitter_id: string;
+    fitter_name: string;
+    fitter_type: string;
+    is_online: boolean;
+  };
+  request: RequestData | null;
+  jobs: Array<{
+    id: string;
+    status: string;
+    created_at: string;
+    final_price_iqd?: number | null;
+    commission_iqd?: number | null;
+  }>;
+  settings: { commission_percent: number; commission_fixed_iqd: number };
+};
 
-export default function FitterDashboard({ params }: { params: Promise<{ fitterCode: string }> }) {
-  const { fitterCode } = use(params); const { t, lang } = useLanguage(); const [dashboard, setDashboard] = useState<Dashboard>(); const [error, setError] = useState(''); const [online, setOnline] = useState(false); const [location, setLocation] = useState<[number, number]>(); const [busy, setBusy] = useState(false); const [price, setPrice] = useState(''); const [seconds, setSeconds] = useState(0); const watchRef = useRef<number | undefined>(undefined);
-  const poll = useCallback(async () => { try { const response = await fetch(`/api/fitter/dashboard/${fitterCode}`, { cache: 'no-store' }); const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Private dashboard link is not valid.'); setDashboard(data as Dashboard); setOnline(Boolean(data.fitter.is_online)); if (data.request) setSeconds(Math.max(0, Math.floor((new Date(data.request.expires_at).getTime() - Date.now()) / 1000))); } catch (err) { setError(err instanceof Error ? err.message : 'Unable to load dashboard.'); } }, [fitterCode]);
-  useEffect(() => { void poll(); const timer = window.setInterval(() => void poll(), 5000); return () => window.clearInterval(timer); }, [poll]);
-  useEffect(() => { const timer = window.setInterval(() => setSeconds((value) => Math.max(0, value - 1)), 1000); return () => window.clearInterval(timer); }, []);
-  useEffect(() => () => { if (watchRef.current !== undefined) navigator.geolocation?.clearWatch(watchRef.current); }, []);
-  const sendPresence = async (isOnline: boolean, coords?: [number, number]) => { const response = await fetch('/api/fitter/location', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fitter_code: fitterCode, is_online: isOnline, ...(coords ? { lat: coords[0], lng: coords[1] } : {}) }) }); if (!response.ok) { const data = await response.json().catch(() => ({})); throw new Error(data.error || 'Unable to update availability.'); } };
-  const toggleOnline = () => { if (busy) return; setBusy(true); setError(''); if (online) { void sendPresence(false).then(() => setOnline(false)).catch((err) => setError(err.message)).finally(() => setBusy(false)); return; } if (dashboard?.fitter.fitter_type === 'mobile' && navigator.geolocation) { navigator.geolocation.getCurrentPosition((position) => { const coords: [number, number] = [position.coords.latitude, position.coords.longitude]; setLocation(coords); void sendPresence(true, coords).then(() => setOnline(true)).catch((err) => setError(err.message)).finally(() => setBusy(false)); }, () => { setError(lang === 'en' ? 'Allow location to go online as a mobile fitter.' : 'بۆ ئۆنلاینبوون ڕێگە بە شوێن بدە.'); setBusy(false); }, { enableHighAccuracy: true, timeout: 12000 }); } else { void sendPresence(true).then(() => setOnline(true)).catch((err) => setError(err.message)).finally(() => setBusy(false)); } };
-  const action = async (actionName: 'accept' | 'decline' | 'en_route' | 'complete') => { if (!dashboard?.request) return; setBusy(true); setError(''); const endpoint = actionName === 'decline' ? `/api/dispatch/decline/${dashboard.request.fitter_token}` : `/api/dispatch/accept/${dashboard.request.fitter_token}`; try { const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fitter_code: fitterCode, action: actionName }) }); const data = await response.json(); if (!response.ok) throw new Error(data.error || 'This request changed.'); setPrice(''); await poll(); } catch (err) { setError(err instanceof Error ? err.message : 'Unable to update request.'); } finally { setBusy(false); } };
-  if (error && !dashboard) return <main id="main-content" className="nf-main"><div className="nf-portal-error"><ShieldCheck size={30} /><h1>{error}</h1><p>ئەم بەستەرە تەنها بۆ فیتەری پشتڕاستکراوەیە.</p><Link className="nf-button primary" href="/">{t.back}</Link></div></main>;
-  if (!dashboard) return <main id="main-content" className="nf-main"><div className="nf-portal-loading"><Truck size={29} /><span>چاوەڕوانبە...</span></div></main>;
-  const req = dashboard.request; const role = dashboard.fitter.fitter_type === 'mobile' ? t.mobile : t.fixed; const pending = req?.status === 'pending'; const active = req && (req.status === 'accepted' || req.status === 'en_route');
-  return <main id="main-content" className="nf-main"><div className="nf-shell nf-portal-head"><div><span className="nf-eyebrow"><ShieldCheck size={14} />{role}</span><h1>{dashboard.fitter.fitter_name}</h1><p>{lang === 'en' ? 'Your private service desk' : lang === 'ar' ? 'مكتب خدمتك الخاص' : 'پۆرتاڵی تایبەتی خزمەتگوزارییەکەت'}</p></div><button type="button" className={'nf-presence ' + (online ? 'online' : '')} onClick={toggleOnline} disabled={busy}><span>{online ? <Wifi size={17} /> : <WifiOff size={17} />}</span>{online ? (lang === 'en' ? 'Online' : lang === 'ar' ? 'متصل' : 'بەردەستم') : (lang === 'en' ? 'Go online' : lang === 'ar' ? 'اتصل الآن' : 'بەردەست بمە')}</button></div>{error && <p className="nf-shell nf-inline-error" role="alert">{error}</p>}<section className="nf-shell nf-portal-grid"><div className="nf-portal-main">{pending && req ? <article className="nf-incoming-card"><div className="nf-incoming-top"><span className="nf-eyebrow"><AlertCircle size={15} />{lang === 'en' ? 'New request' : lang === 'ar' ? 'طلب جديد' : 'داواکاری نوێ'}</span><span className="nf-countdown"><Clock3 size={14} />{Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')}</span></div><div className="nf-incoming-map"><DispatchMap userLat={req.user_lat} userLng={req.user_lng} mode="fitter" compact /></div><div className="nf-location-row"><span><MapPin size={16} />{lang === 'en' ? 'Customer location' : lang === 'ar' ? 'موقع العميل' : 'شوێنی داواکار'}</span>{location && <span dir="ltr">{location[0].toFixed(4)}, {location[1].toFixed(4)}</span>}</div>{req.user_note && <p className="nf-request-note">{req.user_note}</p>}<div className="nf-portal-actions"><button className="nf-button primary" onClick={() => void action('accept')} disabled={busy}><Check size={17} />{lang === 'en' ? 'Accept request' : lang === 'ar' ? 'قبول الطلب' : 'قبوڵکردن'}</button><button className="nf-button danger" onClick={() => void action('decline')} disabled={busy}><X size={17} />{lang === 'en' ? 'Decline' : lang === 'ar' ? 'رفض' : 'ڕەتکردنەوە'}</button></div></article> : active && req ? <article className="nf-active-job"><div className="nf-active-top"><span className="nf-status-pill"><i />{req.status === 'en_route' ? (lang === 'en' ? 'On the way' : lang === 'ar' ? 'في الطريق' : 'لە ڕێگادایە') : (lang === 'en' ? 'Accepted' : lang === 'ar' ? 'تم القبول' : 'قبوڵکراوە')}</span><span className="nf-private-note"><ShieldCheck size={13} />{lang === 'en' ? 'Customer contact stays private' : 'زانیاریی داواکار تایبەتە'}</span></div><div className="nf-active-map"><DispatchMap userLat={req.user_lat} userLng={req.user_lng} fitterLat={location?.[0]} fitterLng={location?.[1]} mode="fitter" /></div><div className="nf-portal-actions"><a className="nf-button ghost" target="_blank" rel="noreferrer" href={`https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=${location ? `${location[0]},${location[1]};` : ''}${req.user_lat},${req.user_lng}`}><Navigation size={16} />{lang === 'en' ? 'Open directions' : lang === 'ar' ? 'فتح الاتجاهات' : 'ڕێگاکە بکەرەوە'}</a>{req.user_phone && <a className="nf-button ghost" href={`tel:${req.user_phone}`}><Navigation size={16} />{lang === 'en' ? 'Call customer' : lang === 'ar' ? 'اتصل بالعميل' : 'پەیوەندی بکە بە کڕیار'}</a>}{req.status === 'accepted' && <button className="nf-button ghost" onClick={() => void action('en_route')} disabled={busy}><Truck size={16} />{lang === 'en' ? 'I am on my way' : lang === 'ar' ? 'أنا في الطريق' : 'لە ڕێگادام'}</button>}<div className="nf-complete-price"><button className="nf-button primary" onClick={() => void action('complete')} disabled={busy}><CheckCircle2 size={16} />{lang === 'en' ? 'Complete' : lang === 'ar' ? 'إكمال' : 'تەواوکردن'}</button></div></div></article> : <div className="nf-waiting-card"><span className="nf-waiting-icon"><Power size={25} /></span><h2>{online ? (lang === 'en' ? 'You are ready for the next request' : lang === 'ar' ? 'أنت جاهز للطلب التالي' : 'ئامادەی داواکاریی داهاتوویت') : (lang === 'en' ? 'Go online when you are ready' : lang === 'ar' ? 'اتصل عندما تكون جاهزاً' : 'کاتێک ئامادەیت ببە بەردەست')}</h2><p>{online ? (lang === 'en' ? 'We will show a request here as soon as it arrives.' : 'کاتێک داواکاری بگات، لێرە دەردەکەوێت.') : (lang === 'en' ? 'Your phone number is never shown to the public.' : 'ژمارەی مۆبایلەکەت بۆ گشتی نیشان نادرێت.')}</p><button className="nf-button primary" onClick={toggleOnline} disabled={busy}><Power size={16} />{online ? (lang === 'en' ? 'Go offline' : 'ناچالاککردن') : (lang === 'en' ? 'Go online' : 'بەردەست بوون')}</button></div>}{dashboard.jobs.length > 0 && <section className="nf-jobs-card"><div className="nf-section-heading"><div><span className="nf-eyebrow"><DollarSign size={14} />{lang === 'en' ? 'Recent jobs' : lang === 'ar' ? 'الطلبات الأخيرة' : 'کارەکانی دوایی'}</span><h2>{dashboard.jobs.length} {lang === 'en' ? 'jobs' : lang === 'ar' ? 'طلبات' : 'کار'}</h2></div></div>{dashboard.jobs.slice(0, 6).map((job) => <div className="nf-job-row" key={job.id}><span><CheckCircle2 size={15} />{job.status}</span><time>{new Date(job.created_at).toLocaleDateString(lang === 'en' ? 'en-GB' : 'ar-IQ')}</time><strong>{job.final_price_iqd ? `${job.final_price_iqd.toLocaleString()} IQD` : '—'}</strong><small>{job.commission_iqd ? `fee ${job.commission_iqd.toLocaleString()} IQD` : ''}</small></div>)}</section>}</div><aside className="nf-portal-side"><div className="nf-portal-info"><span className="nf-settings-icon amber"><DollarSign size={19} /></span><h2>{lang === 'en' ? 'Commission' : lang === 'ar' ? 'العمولة' : 'کۆمیشن'}</h2><p>{lang === 'en' ? 'The platform fee is recorded when a job is completed.' : lang === 'ar' ? 'تُسجل العمولة عند إكمال الطلب.' : 'کۆمیشن دوای تەواوبوونی کارەکە تۆمار دەکرێت.'}</p><strong>{dashboard.settings.commission_percent}% <small>+ {dashboard.settings.commission_fixed_iqd.toLocaleString()} IQD</small></strong></div><div className="nf-portal-info"><span className="nf-settings-icon"><ShieldCheck size={19} /></span><h2>{lang === 'en' ? 'Private by design' : lang === 'ar' ? 'خصوصيتك أولاً' : 'تایبەتمەندی لە پێشە'}</h2><p>{lang === 'en' ? 'Customer phone numbers stay hidden. Use the in-app request and map.' : 'ژمارەی داواکار لە گشتی دەشاردرێتەوە؛ داواکاری و نەخشە بەکاربهێنە.'}</p></div></aside></section><section className="nf-shell nf-portal-community"><Community fitterCode={fitterCode} /></section></main>;
+export default function FitterDashboard({
+  params,
+}: {
+  params: Promise<{ fitterCode: string }>;
+}) {
+  const { fitterCode } = use(params);
+  const { t, lang } = useLanguage();
+  const [dashboard, setDashboard] = useState<Dashboard>();
+  const [error, setError] = useState('');
+  const [online, setOnline] = useState(false);
+  const [location, setLocation] = useState<[number, number]>();
+  const [busy, setBusy] = useState(false);
+  const [seconds, setSeconds] = useState(0);
+  const watchRef = useRef<number | undefined>(undefined);
+  const poll = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/fitter/dashboard/${fitterCode}`, {
+        cache: 'no-store',
+      });
+      const data = await response.json();
+      if (!response.ok)
+        throw new Error(data.error || 'Private dashboard link is not valid.');
+      setDashboard(data as Dashboard);
+      setOnline(Boolean(data.fitter.is_online));
+      if (data.request)
+        setSeconds(
+          Math.max(
+            0,
+            Math.floor(
+              (new Date(data.request.expires_at).getTime() - Date.now()) / 1000,
+            ),
+          ),
+        );
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : 'Unable to load dashboard.',
+      );
+    }
+  }, [fitterCode]);
+  useEffect(() => {
+    void poll();
+    const timer = window.setInterval(() => void poll(), 5000);
+    return () => window.clearInterval(timer);
+  }, [poll]);
+  useEffect(() => {
+    const timer = window.setInterval(
+      () => setSeconds((value) => Math.max(0, value - 1)),
+      1000,
+    );
+    return () => window.clearInterval(timer);
+  }, []);
+  useEffect(
+    () => () => {
+      if (watchRef.current !== undefined)
+        navigator.geolocation?.clearWatch(watchRef.current);
+    },
+    [],
+  );
+  const sendPresence = async (isOnline: boolean, coords?: [number, number]) => {
+    const response = await fetch('/api/fitter/location', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fitter_code: fitterCode,
+        is_online: isOnline,
+        ...(coords ? { lat: coords[0], lng: coords[1] } : {}),
+      }),
+    });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.error || 'Unable to update availability.');
+    }
+  };
+  const startWatchingLocation = () => {
+    if (
+      dashboard?.fitter.fitter_type !== 'mobile' ||
+      !navigator.geolocation ||
+      watchRef.current !== undefined
+    )
+      return;
+    watchRef.current = navigator.geolocation.watchPosition(
+      (position) => {
+        const coords: [number, number] = [
+          position.coords.latitude,
+          position.coords.longitude,
+        ];
+        setLocation(coords);
+        void sendPresence(true, coords).catch((err) =>
+          setError(
+            err instanceof Error ? err.message : 'Location update failed.',
+          ),
+        );
+      },
+      () =>
+        setError(
+          lang === 'en'
+            ? 'Location updates are needed while you are on the way.'
+            : 'لە کاتی چوون بۆ لای داواکار، نوێکردنەوەی شوێن پێویستە.',
+        ),
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 },
+    );
+  };
+  const toggleOnline = () => {
+    if (busy) return;
+    setBusy(true);
+    setError('');
+    if (online) {
+      if (watchRef.current !== undefined) {
+        navigator.geolocation?.clearWatch(watchRef.current);
+        watchRef.current = undefined;
+      }
+      void sendPresence(false)
+        .then(() => setOnline(false))
+        .catch((err) => setError(err.message))
+        .finally(() => setBusy(false));
+      return;
+    }
+    if (dashboard?.fitter.fitter_type === 'mobile' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const coords: [number, number] = [
+            position.coords.latitude,
+            position.coords.longitude,
+          ];
+          setLocation(coords);
+          void sendPresence(true, coords)
+            .then(() => {
+              setOnline(true);
+              startWatchingLocation();
+            })
+            .catch((err) => setError(err.message))
+            .finally(() => setBusy(false));
+        },
+        () => {
+          setError(
+            lang === 'en'
+              ? 'Allow location to go online as a mobile fitter.'
+              : 'بۆ بەردەستبوون ڕێگە بە شوێن بدە.',
+          );
+          setBusy(false);
+        },
+        { enableHighAccuracy: true, timeout: 12000 },
+      );
+    } else {
+      void sendPresence(true)
+        .then(() => setOnline(true))
+        .catch((err) => setError(err.message))
+        .finally(() => setBusy(false));
+    }
+  };
+  const action = async (
+    actionName: 'accept' | 'decline' | 'en_route' | 'complete',
+  ) => {
+    if (!dashboard?.request) return;
+    setBusy(true);
+    setError('');
+    const endpoint =
+      actionName === 'decline'
+        ? `/api/dispatch/decline/${dashboard.request.fitter_token}`
+        : `/api/dispatch/accept/${dashboard.request.fitter_token}`;
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fitter_code: fitterCode, action: actionName }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'This request changed.');
+      await poll();
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : 'Unable to update request.',
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+  if (error && !dashboard)
+    return (
+      <main id="main-content" className="nf-main">
+        <div className="nf-portal-error">
+          <ShieldCheck size={30} />
+          <h1>{error}</h1>
+          <p>ئەم بەستەرە تەنها بۆ فیتەری پشتڕاستکراوەیە.</p>
+          <Link className="nf-button primary" href="/">
+            {t.back}
+          </Link>
+        </div>
+      </main>
+    );
+  if (!dashboard)
+    return (
+      <main id="main-content" className="nf-main">
+        <div className="nf-portal-loading">
+          <Truck size={29} />
+          <span>چاوەڕوانبە...</span>
+        </div>
+      </main>
+    );
+  const req = dashboard.request;
+  const role = dashboard.fitter.fitter_type === 'mobile' ? t.mobile : t.fixed;
+  const pending = req?.status === 'pending';
+  const active =
+    req && (req.status === 'accepted' || req.status === 'en_route');
+  return (
+    <main id="main-content" className="nf-main">
+      <div className="nf-shell nf-portal-head">
+        <div>
+          <span className="nf-eyebrow">
+            <ShieldCheck size={14} />
+            {role}
+          </span>
+          <h1>{dashboard.fitter.fitter_name}</h1>
+          <p>
+            {lang === 'en'
+              ? 'Your private service desk'
+              : lang === 'ar'
+                ? 'مكتب خدمتك الخاص'
+                : 'پۆرتاڵی تایبەتی خزمەتگوزارییەکەت'}
+          </p>
+        </div>
+        <button
+          type="button"
+          className={'nf-presence ' + (online ? 'online' : '')}
+          onClick={toggleOnline}
+          disabled={busy}
+        >
+          <span>{online ? <Wifi size={17} /> : <WifiOff size={17} />}</span>
+          {online
+            ? lang === 'en'
+              ? 'Online'
+              : lang === 'ar'
+                ? 'متصل'
+                : 'بەردەستم'
+            : lang === 'en'
+              ? 'Go online'
+              : lang === 'ar'
+                ? 'اتصل الآن'
+                : 'بەردەست بمە'}
+        </button>
+      </div>
+      {error && (
+        <p className="nf-shell nf-inline-error" role="alert">
+          {error}
+        </p>
+      )}
+      <section className="nf-shell nf-portal-grid">
+        <div className="nf-portal-main">
+          {pending && req ? (
+            <article className="nf-incoming-card">
+              <div className="nf-incoming-top">
+                <span className="nf-eyebrow">
+                  <AlertCircle size={15} />
+                  {lang === 'en'
+                    ? 'New request'
+                    : lang === 'ar'
+                      ? 'طلب جديد'
+                      : 'داواکاری نوێ'}
+                </span>
+                <span className="nf-countdown">
+                  <Clock3 size={14} />
+                  {Math.floor(seconds / 60)}:
+                  {String(seconds % 60).padStart(2, '0')}
+                </span>
+              </div>
+              <div className="nf-incoming-map">
+                <DispatchMap
+                  userLat={req.user_lat}
+                  userLng={req.user_lng}
+                  mode="fitter"
+                  compact
+                />
+              </div>
+              <div className="nf-location-row">
+                <span>
+                  <MapPin size={16} />
+                  {lang === 'en'
+                    ? 'Customer location'
+                    : lang === 'ar'
+                      ? 'موقع العميل'
+                      : 'شوێنی داواکار'}
+                </span>
+                {location && (
+                  <span dir="ltr">
+                    {location[0].toFixed(4)}, {location[1].toFixed(4)}
+                  </span>
+                )}
+              </div>
+              {req.user_note && (
+                <p className="nf-request-note">{req.user_note}</p>
+              )}
+              <div className="nf-portal-actions">
+                <button
+                  className="nf-button primary"
+                  onClick={() => void action('accept')}
+                  disabled={busy}
+                >
+                  <Check size={17} />
+                  {lang === 'en'
+                    ? 'Accept request'
+                    : lang === 'ar'
+                      ? 'قبول الطلب'
+                      : 'قبوڵکردن'}
+                </button>
+                <button
+                  className="nf-button danger"
+                  onClick={() => void action('decline')}
+                  disabled={busy}
+                >
+                  <X size={17} />
+                  {lang === 'en'
+                    ? 'Decline'
+                    : lang === 'ar'
+                      ? 'رفض'
+                      : 'ڕەتکردنەوە'}
+                </button>
+              </div>
+            </article>
+          ) : active && req ? (
+            <article className="nf-active-job">
+              <div className="nf-active-top">
+                <span className="nf-status-pill">
+                  <i />
+                  {req.status === 'en_route'
+                    ? lang === 'en'
+                      ? 'On the way'
+                      : lang === 'ar'
+                        ? 'في الطريق'
+                        : 'لە ڕێگادایە'
+                    : lang === 'en'
+                      ? 'Accepted'
+                      : lang === 'ar'
+                        ? 'تم القبول'
+                        : 'قبوڵکراوە'}
+                </span>
+                <span className="nf-private-note">
+                  <ShieldCheck size={13} />
+                  {lang === 'en'
+                    ? 'Customer contact stays private'
+                    : 'زانیاریی داواکار تایبەتە'}
+                </span>
+              </div>
+              <div className="nf-active-map">
+                <DispatchMap
+                  userLat={req.user_lat}
+                  userLng={req.user_lng}
+                  fitterLat={location?.[0]}
+                  fitterLng={location?.[1]}
+                  mode="fitter"
+                />
+              </div>
+              <div className="nf-portal-actions">
+                <a
+                  className="nf-button ghost"
+                  target="_blank"
+                  rel="noreferrer"
+                  href={`https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=${location ? `${location[0]},${location[1]};` : ''}${req.user_lat},${req.user_lng}`}
+                >
+                  <Navigation size={16} />
+                  {lang === 'en'
+                    ? 'Open directions'
+                    : lang === 'ar'
+                      ? 'فتح الاتجاهات'
+                      : 'ڕێگاکە بکەرەوە'}
+                </a>
+                {req.user_phone && (
+                  <a className="nf-button ghost" href={`tel:${req.user_phone}`}>
+                    <Navigation size={16} />
+                    {lang === 'en'
+                      ? 'Call customer'
+                      : lang === 'ar'
+                        ? 'اتصل بالعميل'
+                        : 'پەیوەندی بکە بە کڕیار'}
+                  </a>
+                )}
+                {req.status === 'accepted' && (
+                  <button
+                    className="nf-button ghost"
+                    onClick={() => void action('en_route')}
+                    disabled={busy}
+                  >
+                    <Truck size={16} />
+                    {lang === 'en'
+                      ? 'I am on my way'
+                      : lang === 'ar'
+                        ? 'أنا في الطريق'
+                        : 'لە ڕێگادام'}
+                  </button>
+                )}
+                <div className="nf-complete-price">
+                  <button
+                    className="nf-button primary"
+                    onClick={() => void action('complete')}
+                    disabled={busy}
+                  >
+                    <CheckCircle2 size={16} />
+                    {lang === 'en'
+                      ? 'Complete'
+                      : lang === 'ar'
+                        ? 'إكمال'
+                        : 'تەواوکردن'}
+                  </button>
+                </div>
+              </div>
+            </article>
+          ) : (
+            <div className="nf-waiting-card">
+              <span className="nf-waiting-icon">
+                <Power size={25} />
+              </span>
+              <h2>
+                {online
+                  ? lang === 'en'
+                    ? 'You are ready for the next request'
+                    : lang === 'ar'
+                      ? 'أنت جاهز للطلب التالي'
+                      : 'ئامادەی داواکاریی داهاتوویت'
+                  : lang === 'en'
+                    ? 'Go online when you are ready'
+                    : lang === 'ar'
+                      ? 'اتصل عندما تكون جاهزاً'
+                      : 'کاتێک ئامادەیت ببە بەردەست'}
+              </h2>
+              <p>
+                {online
+                  ? lang === 'en'
+                    ? 'We will show a request here as soon as it arrives.'
+                    : 'کاتێک داواکاری بگات، لێرە دەردەکەوێت.'
+                  : lang === 'en'
+                    ? 'Your phone number is never shown to the public.'
+                    : 'ژمارەی مۆبایلەکەت بۆ گشتی نیشان نادرێت.'}
+              </p>
+              <button
+                className="nf-button primary"
+                onClick={toggleOnline}
+                disabled={busy}
+              >
+                <Power size={16} />
+                {online
+                  ? lang === 'en'
+                    ? 'Go offline'
+                    : 'ناچالاککردن'
+                  : lang === 'en'
+                    ? 'Go online'
+                    : 'بەردەست بوون'}
+              </button>
+            </div>
+          )}
+          {dashboard.jobs.length > 0 && (
+            <section className="nf-jobs-card">
+              <div className="nf-section-heading">
+                <div>
+                  <span className="nf-eyebrow">
+                    <DollarSign size={14} />
+                    {lang === 'en'
+                      ? 'Recent jobs'
+                      : lang === 'ar'
+                        ? 'الطلبات الأخيرة'
+                        : 'کارەکانی دوایی'}
+                  </span>
+                  <h2>
+                    {dashboard.jobs.length}{' '}
+                    {lang === 'en' ? 'jobs' : lang === 'ar' ? 'طلبات' : 'کار'}
+                  </h2>
+                </div>
+              </div>
+              {dashboard.jobs.slice(0, 6).map((job) => (
+                <div className="nf-job-row" key={job.id}>
+                  <span>
+                    <CheckCircle2 size={15} />
+                    {job.status}
+                  </span>
+                  <time>
+                    {new Date(job.created_at).toLocaleDateString(
+                      lang === 'en' ? 'en-GB' : 'ar-IQ',
+                    )}
+                  </time>
+                  <strong>
+                    {job.final_price_iqd
+                      ? `${job.final_price_iqd.toLocaleString()} IQD`
+                      : '—'}
+                  </strong>
+                  <small>
+                    {job.commission_iqd
+                      ? `fee ${job.commission_iqd.toLocaleString()} IQD`
+                      : ''}
+                  </small>
+                </div>
+              ))}
+            </section>
+          )}
+        </div>
+        <aside className="nf-portal-side">
+          <div className="nf-portal-info">
+            <span className="nf-settings-icon amber">
+              <DollarSign size={19} />
+            </span>
+            <h2>
+              {lang === 'en'
+                ? 'Commission'
+                : lang === 'ar'
+                  ? 'العمولة'
+                  : 'کۆمیشن'}
+            </h2>
+            <p>
+              {lang === 'en'
+                ? 'The platform fee is recorded when a job is completed.'
+                : lang === 'ar'
+                  ? 'تُسجل العمولة عند إكمال الطلب.'
+                  : 'کۆمیشن دوای تەواوبوونی کارەکە تۆمار دەکرێت.'}
+            </p>
+            <strong>
+              {dashboard.settings.commission_percent}%{' '}
+              <small>
+                + {dashboard.settings.commission_fixed_iqd.toLocaleString()} IQD
+              </small>
+            </strong>
+          </div>
+          <div className="nf-portal-info">
+            <span className="nf-settings-icon">
+              <ShieldCheck size={19} />
+            </span>
+            <h2>
+              {lang === 'en'
+                ? 'Private by design'
+                : lang === 'ar'
+                  ? 'خصوصيتك أولاً'
+                  : 'تایبەتمەندی لە پێشە'}
+            </h2>
+            <p>
+              {lang === 'en'
+                ? 'Customer phone numbers stay hidden. Use the in-app request and map.'
+                : 'ژمارەی داواکار لە گشتی دەشاردرێتەوە؛ داواکاری و نەخشە بەکاربهێنە.'}
+            </p>
+          </div>
+        </aside>
+      </section>
+      <section className="nf-shell nf-portal-community">
+        <Community fitterCode={fitterCode} />
+      </section>
+    </main>
+  );
 }

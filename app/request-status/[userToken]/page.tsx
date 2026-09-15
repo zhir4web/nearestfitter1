@@ -1,6 +1,6 @@
 'use client';
 import dynamic from 'next/dynamic';
-import { useEffect, useState, useRef, use } from 'react';
+import { useCallback, useEffect, useState, useRef, use } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Truck,
@@ -8,8 +8,6 @@ import {
   XCircle,
   AlertTriangle,
   Home,
-  MapPin,
-  Navigation,
   Loader2,
 } from 'lucide-react';
 import { useLanguage } from '@/components/language';
@@ -18,6 +16,16 @@ import Link from 'next/link';
 const DispatchMap = dynamic(() => import('@/components/dispatch-map'), {
   ssr: false,
 });
+
+function haversineKm(latA: number, lngA: number, latB: number, lngB: number) {
+  const radians = (value: number) => (value * Math.PI) / 180;
+  const dLat = radians(latB - latA);
+  const dLng = radians(lngB - lngA);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(radians(latA)) * Math.cos(radians(latB)) * Math.sin(dLng / 2) ** 2;
+  return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
 export default function RequestStatusPage({
   params,
@@ -31,7 +39,6 @@ export default function RequestStatusPage({
   const [status, setStatus] = useState<string>('pending');
   const [fitterName, setFitterName] = useState<string>('');
   const [error, setError] = useState('');
-  const [reassigning, setReassigning] = useState(false);
 
   // Live tracking state
   const [fitterLat, setFitterLat] = useState<number | null>(null);
@@ -41,6 +48,64 @@ export default function RequestStatusPage({
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const trackRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const reassigningRef = useRef(false);
+
+  const stopPolling = useCallback(() => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+  }, []);
+
+  const stopLocationPolling = useCallback(() => {
+    if (trackRef.current) {
+      clearInterval(trackRef.current);
+      trackRef.current = null;
+    }
+  }, []);
+
+  const handleReassign = useCallback(async () => {
+    if (reassigningRef.current) return;
+    reassigningRef.current = true;
+    setStatus('reassigning');
+    try {
+      const res = await fetch('/api/dispatch/reassign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_token: userToken }),
+      });
+      const data = await res.json();
+      if (!res.ok) setStatus('no_fitters');
+      else router.push(`/request-status/${data.user_token}`);
+    } catch {
+      setStatus('error');
+    } finally {
+      reassigningRef.current = false;
+    }
+  }, [router, userToken]);
+
+  const startLocationPolling = useCallback(() => {
+    if (trackRef.current) return;
+    const refreshLocation = async () => {
+      try {
+        const r = await fetch(`/api/dispatch/${userToken}/fitter-location`);
+        if (!r.ok) return;
+        const d = await r.json();
+        if (d.fitter_lat !== null && d.fitter_lng !== null) {
+          setFitterLat(d.fitter_lat);
+          setFitterLng(d.fitter_lng);
+        }
+        if (d.status === 'completed') {
+          stopLocationPolling();
+          setStatus('completed');
+        }
+      } catch {
+        // A later poll will retry a transient network error.
+      }
+    };
+    void refreshLocation();
+    trackRef.current = setInterval(() => void refreshLocation(), 5000);
+  }, [stopLocationPolling, userToken]);
 
   // ── Dispatch status polling ──
   useEffect(() => {
@@ -56,106 +121,46 @@ export default function RequestStatusPage({
 
         setStatus(d.status);
         setFitterName(d.fitter_name);
+        if (typeof d.user_lat === 'number' && typeof d.user_lng === 'number') {
+          setUserLat(d.user_lat);
+          setUserLng(d.user_lng);
+        }
 
         if (
-          d.status === 'accepted' ||
           d.status === 'declined' ||
-          d.status === 'reassigning'
+          d.status === 'reassigning' ||
+          d.status === 'completed' ||
+          d.status === 'cancelled'
         ) {
           stopPolling();
-          if (d.status === 'accepted') startLocationPolling();
+          stopLocationPolling();
         } else if (
           d.status === 'expired' ||
           (d.expires_at && new Date() > new Date(d.expires_at))
         ) {
           stopPolling();
-          handleReassign();
+          void handleReassign();
+        } else if (d.status === 'accepted' || d.status === 'en_route') {
+          startLocationPolling();
         }
       } catch {
         // keep polling on network error
       }
     }
 
-    poll();
+    void poll();
     pollRef.current = setInterval(poll, 5000);
     return () => {
       stopPolling();
       stopLocationPolling();
     };
-  }, [userToken]);
-
-  function stopPolling() {
-    if (pollRef.current) {
-      clearInterval(pollRef.current);
-      pollRef.current = null;
-    }
-  }
-
-  // ── Live fitter location polling (after accept) ──
-  function startLocationPolling() {
-    if (trackRef.current) return; // already running
-    trackRef.current = setInterval(async () => {
-      try {
-        const r = await fetch(`/api/dispatch/${userToken}/fitter-location`);
-        if (!r.ok) return;
-        const d = await r.json();
-        if (d.fitter_lat !== null && d.fitter_lng !== null) {
-          setFitterLat(d.fitter_lat);
-          setFitterLng(d.fitter_lng);
-        }
-        // If dispatch completed, stop tracking
-        if (d.status === 'completed') {
-          stopLocationPolling();
-          setStatus('completed');
-        }
-      } catch {
-        // ignore
-      }
-    }, 8000);
-  }
-
-  function stopLocationPolling() {
-    if (trackRef.current) {
-      clearInterval(trackRef.current);
-      trackRef.current = null;
-    }
-  }
-
-  // Get user's own location for map
-  useEffect(() => {
-    navigator.geolocation?.getCurrentPosition(
-      (p) => {
-        setUserLat(p.coords.latitude);
-        setUserLng(p.coords.longitude);
-      },
-      () => {},
-      { enableHighAccuracy: true, timeout: 10000 },
-    );
-  }, []);
-
-  async function handleReassign() {
-    if (reassigning) return;
-    setReassigning(true);
-    setStatus('reassigning');
-
-    try {
-      const res = await fetch('/api/dispatch/reassign', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_token: userToken }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setStatus('no_fitters');
-        return;
-      }
-      router.push(`/request-status/${data.user_token}`);
-    } catch {
-      setStatus('error');
-    } finally {
-      setReassigning(false);
-    }
-  }
+  }, [
+    handleReassign,
+    startLocationPolling,
+    stopLocationPolling,
+    stopPolling,
+    userToken,
+  ]);
 
   if (error) {
     return (
@@ -173,9 +178,19 @@ export default function RequestStatusPage({
   }
 
   const showMap =
-    status === 'accepted' &&
+    (status === 'accepted' || status === 'en_route') &&
     userLat !== null &&
     userLng !== null;
+  const etaMinutes =
+    fitterLat !== null &&
+    fitterLng !== null &&
+    userLat !== null &&
+    userLng !== null
+      ? Math.max(
+          1,
+          Math.ceil(haversineKm(fitterLat, fitterLng, userLat, userLng) / 0.55),
+        )
+      : null;
 
   return (
     <main className="status-page">
@@ -211,15 +226,23 @@ export default function RequestStatusPage({
         )}
 
         {/* ── Accepted + Live Map ── */}
-        {status === 'accepted' && (
+        {(status === 'accepted' || status === 'en_route') && (
           <div className="status-accepted">
             <div className="accepted-header">
               <div className="dispatch-icon accepted">
                 <CheckCircle2 size={36} />
               </div>
               <div>
-                <h2 className="dispatch-success">{t.fitterAccepted}</h2>
-                <p>{t.fitterAcceptedSub}</p>
+                <h2 className="dispatch-success">
+                  {status === 'en_route'
+                    ? 'فیتەرەکە لە ڕێگادایە'
+                    : t.fitterAccepted}
+                </h2>
+                <p>
+                  {status === 'en_route'
+                    ? 'شوێنی فیتەرەکە و کاتی گەیشتنی خەمڵێنراو لەسەر نەخشە نوێ دەبێتەوە.'
+                    : t.fitterAcceptedSub}
+                </p>
                 {fitterName && (
                   <div className="fitter-name-badge">
                     <Truck size={16} />
@@ -244,6 +267,11 @@ export default function RequestStatusPage({
                     </>
                   )}
                 </div>
+                <p className="tracking-eta">
+                  {etaMinutes
+                    ? `کاتی خەمڵێنراوی گەیشتن: نزیکەی ${etaMinutes} خولەک`
+                    : 'شوێنی فیتەرەکە چاوەڕێ دەکرێت…'}
+                </p>
                 <DispatchMap
                   userLat={userLat}
                   userLng={userLng}
@@ -268,7 +296,11 @@ export default function RequestStatusPage({
             </div>
             <h2>خزمەتگوزاری تەواو بوو! ✅</h2>
             <p>فیتەرەکە کارەکەی تەواو کرد. سوپاس بۆ بەکارهێنانت.</p>
-            <Link href="/" className="button primary" style={{ marginTop: '1.5rem' }}>
+            <Link
+              href="/"
+              className="button primary"
+              style={{ marginTop: '1.5rem' }}
+            >
               <Home size={17} /> {t.back}
             </Link>
           </div>
@@ -282,7 +314,11 @@ export default function RequestStatusPage({
             </div>
             <h2>{t.fitterDeclined}</h2>
             <p>{t.fitterDeclinedSub}</p>
-            <Link href="/" className="button primary" style={{ marginTop: '1.5rem' }}>
+            <Link
+              href="/"
+              className="button primary"
+              style={{ marginTop: '1.5rem' }}
+            >
               <Home size={17} /> {t.back}
             </Link>
           </div>
@@ -296,7 +332,11 @@ export default function RequestStatusPage({
             </div>
             <h2>{t.noFittersOpen}</h2>
             <p>{t.requestExpiredSub}</p>
-            <Link href="/" className="button primary" style={{ marginTop: '1.5rem' }}>
+            <Link
+              href="/"
+              className="button primary"
+              style={{ marginTop: '1.5rem' }}
+            >
               <Home size={17} /> {t.back}
             </Link>
           </div>
@@ -309,7 +349,11 @@ export default function RequestStatusPage({
               <AlertTriangle size={40} />
             </div>
             <h2>{t.error}</h2>
-            <Link href="/" className="button primary" style={{ marginTop: '1.5rem' }}>
+            <Link
+              href="/"
+              className="button primary"
+              style={{ marginTop: '1.5rem' }}
+            >
               <Home size={17} /> {t.back}
             </Link>
           </div>

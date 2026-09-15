@@ -48,3 +48,7 @@ next-env.d.ts
 /.pnpm-store/
 /public/mobile/
 /public/partner/
+
+# local Flutter/Dart tool state used only during analysis
+/mobile/.dart-appdata/
+/mobile/.dart-localappdata/

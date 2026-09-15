@@ -2,15 +2,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import {
-  Navigation,
-  AlertTriangle,
-  MapPin,
-  Store,
-  Truck,
-  X,
-  Star,
-} from 'lucide-react';
+import { AlertTriangle, MapPin, Store, Truck, X, Star } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -151,31 +143,25 @@ export function Detail({
               ({reviews.length})
             </span>
           </div>
-          {f.demo && (
-            <p className="demo-note">{t.demoNotice}</p>
-          )}
+          {f.demo && <p className="demo-note">{t.demoNotice}</p>}
           <div className="detail-actions">
-              {!f.demo && user && status.open && (
-                <Link className="button primary" href={`/request-help?lat=${user[0]}&lng=${user[1]}&fitter=${encodeURIComponent(f.id)}`}>
-                  <AlertTriangle size={18} />
-                  {t.requestHelp}
-                </Link>
-              )}
-              <a
-                className="button directions"
-                href={`https://www.google.com/maps/dir/?api=1&destination=${f.latitude},${f.longitude}`}
-                target="_blank"
-                rel="noopener noreferrer"
+            {!f.demo && user && status.open && (
+              <Link
+                className="button primary"
+                href={`/request-help?lat=${user[0]}&lng=${user[1]}&fitter=${encodeURIComponent(f.id)}`}
               >
-                <Navigation size={18} />
-                {t.directions}
-              </a>
-            </div>
+                <AlertTriangle size={18} />
+                {t.requestHelp}
+              </Link>
+            )}
+          </div>
           <section className="form-section">
             <h2 className="field-title">{t.services}</h2>
             <div className="service-tags">
               {f.services.map((s, idx) => (
-                <span key={idx} className="free-text-service">{s}</span>
+                <span key={idx} className="free-text-service">
+                  {s}
+                </span>
               ))}
             </div>
           </section>

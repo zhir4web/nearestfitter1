@@ -11,10 +11,57 @@ const center = LatLng(35.561, 45.435);
 const accent = Color(0xFFFF8A42);
 typedef Json = Map<String, dynamic>;
 
+/// Shared product mark for the customer and fitter applications.
+class BrandMark extends StatelessWidget {
+  final double size;
+  const BrandMark({super.key, this.size = 40});
+  @override
+  Widget build(BuildContext context) => Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(
+      color: accent,
+      borderRadius: BorderRadius.circular(size * .27),
+    ),
+    child: Icon(
+      Icons.adjust_rounded,
+      color: const Color(0xFF211706),
+      size: size * .62,
+    ),
+  );
+}
+
+Widget brandTitle(AppState state, {bool partner = false}) => Row(
+  children: [
+    const BrandMark(size: 34),
+    const SizedBox(width: 10),
+    Expanded(
+      child: Text(
+        state.tr('فیتەری خێرا', 'Nearest Fitter', 'أقرب فني'),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+    ),
+    if (partner)
+      Text(
+        state.tr('فیتەر', 'Fitter', 'الفني'),
+        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+      ),
+  ],
+);
+
 class Api {
   final http.Client client;
   final String baseUrl;
-  Api({http.Client? client, String? baseUrl}) : client = client ?? http.Client(), baseUrl = baseUrl ?? (apiBase.isNotEmpty ? apiBase : kIsWeb ? Uri.base.origin : '');
+  Api({http.Client? client, String? baseUrl})
+    : client = client ?? http.Client(),
+      baseUrl =
+          baseUrl ??
+          (apiBase.isNotEmpty
+              ? apiBase
+              : kIsWeb
+              ? Uri.base.origin
+              : '');
   Future<dynamic> call(String path, {String method = 'GET', Json? body}) async {
     final base = Uri.tryParse(baseUrl);
     if (base == null || !base.hasScheme || !base.hasAuthority) {

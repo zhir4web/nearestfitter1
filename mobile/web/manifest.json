@@ -1,11 +1,11 @@
 {
-    "name": "nearest_fitter",
-    "short_name": "nearest_fitter",
+    "name": "فیتەری خێرا | Nearest Fitter",
+    "short_name": "فیتەری خێرا",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#0E151C",
+    "theme_color": "#FF8A42",
+    "description": "یارمەتیی فیتەر و ڕێگاکە لە سلێمانی.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

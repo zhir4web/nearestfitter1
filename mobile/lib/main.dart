@@ -19,6 +19,8 @@ class FitterApp extends StatelessWidget {
     builder: (context, _) {
       ThemeData theme(Brightness brightness) => ThemeData(
         useMaterial3: true,
+        fontFamily: 'NRT',
+        fontFamilyFallback: const ['Noto Naskh Arabic', 'Arial'],
         brightness: brightness,
         colorScheme: ColorScheme.fromSeed(
           seedColor: accent,

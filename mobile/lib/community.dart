@@ -196,6 +196,7 @@ class _PostFormState extends State<PostForm> {
       key: TextEditingController(),
   };
   bool saving = false;
+  String? validationError;
   @override
   void dispose() {
     for (final c in fields.values) {
@@ -231,10 +232,43 @@ class _PostFormState extends State<PostForm> {
                 decoration: InputDecoration(labelText: labels[i]),
               ),
             ),
+          if (validationError != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Text(
+                validationError!,
+                style: const TextStyle(
+                  color: Colors.redAccent,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
           FilledButton(
             onPressed: saving
                 ? null
                 : () async {
+                    final minimums = {
+                      'author_name': 2,
+                      'title': 4,
+                      'car_model': 2,
+                      'neighborhood': 2,
+                      'body': 10,
+                    };
+                    final missing = minimums.entries.any(
+                      (entry) =>
+                          fields[entry.key]!.text.trim().runes.length <
+                          entry.value,
+                    );
+                    if (missing) {
+                      setState(
+                        () => validationError = s.tr(
+                          'تکایە هەموو خانەکان پڕ بکەوە؛ وردەکاریی کێشەکە دەبێت لانیکەم ١٠ پیت بێت.',
+                          'Complete every field; the problem details need at least 10 characters.',
+                          'أكمل جميع الحقول؛ تفاصيل المشكلة تحتاج 10 أحرف على الأقل.',
+                        ),
+                      );
+                      return;
+                    }
                     setState(() => saving = true);
                     try {
                       final prefs = await SharedPreferences.getInstance();
@@ -249,10 +283,21 @@ class _PostFormState extends State<PostForm> {
                           'website': '',
                         },
                       );
-                      await prefs.setString('community_owner', result['owner_token']);
+                      await prefs.setString(
+                        'community_owner',
+                        result['owner_token'],
+                      );
                       if (context.mounted) Navigator.pop(context);
                     } catch (e) {
-                      if (context.mounted) toast(context, e);
+                      if (mounted) {
+                        setState(
+                          () => validationError = s.tr(
+                            'بڵاوکردنەوە سەرکەوتوو نەبوو. تکایە دووبارە هەوڵ بدەوە.',
+                            'Publishing did not succeed. Please try again.',
+                            'تعذر النشر. حاول مرة أخرى.',
+                          ),
+                        );
+                      }
                     } finally {
                       if (mounted) setState(() => saving = false);
                     }

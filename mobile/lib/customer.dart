@@ -45,32 +45,7 @@ class _CustomerHomeState extends State<CustomerHome> {
       s.tr('ڕێکخستن', 'Settings', 'الإعدادات'),
     ];
     return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: accent,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(Icons.tire_repair, color: Colors.black),
-            ),
-            const SizedBox(width: 10),
-            Expanded(child: Text(s.tr('فیتەری خێرا', 'Nearest Fitter', 'أقرب فني'), maxLines: 1, overflow: TextOverflow.ellipsis)),
-          ],
-        ),
-        actions: [
-          IconButton(
-            onPressed: () => perform(context, () async {
-              await s.locate();
-              setState(() {});
-            }),
-            icon: const Icon(Icons.my_location),
-            tooltip: s.tr('شوێنی من', 'My location', 'موقعي'),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: brandTitle(s)),
       body: tab == 2
           ? CommunityPage(state: s)
           : tab == 4
@@ -291,9 +266,9 @@ class _CustomerHomeState extends State<CustomerHome> {
                                                 'متاح',
                                               )
                                             : s.tr(
-                                                'ئۆفلاین',
-                                                'Offline',
-                                                'غير متصل',
+                                                'بەردەست نیە',
+                                                'Unavailable',
+                                                'غير متاح',
                                               ),
                                         style: TextStyle(
                                           color: f['is_online'] == true
@@ -562,20 +537,6 @@ class FitterDetail extends StatelessWidget {
           label: Text(
             state.tr('داوای یارمەتی', 'Request help', 'طلب المساعدة'),
           ),
-        ),
-        const SizedBox(height: 12),
-        OutlinedButton.icon(
-          onPressed: () => perform(context, () async {
-            final uri = Uri.https('www.google.com', '/maps/dir/', {
-              'api': '1',
-              'destination': '${fitter['latitude']},${fitter['longitude']}',
-            });
-            if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-              throw Exception('Unable to open directions');
-            }
-          }),
-          icon: const Icon(Icons.directions),
-          label: Text(state.tr('ڕێگاکە', 'Directions', 'الاتجاهات')),
         ),
         const SizedBox(height: 24),
         Text(

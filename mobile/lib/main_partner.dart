@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'core.dart';
 import 'main.dart' show FitterApp;
@@ -78,7 +77,9 @@ class _PartnerHomeState extends State<PartnerHome> with WidgetsBindingObserver {
       if (mounted) {
         final oldReq = data?['request'];
         final newReq = result['request'];
-        if (newReq != null && newReq['status'] == 'pending' && (oldReq == null || oldReq['id'] != newReq['id'])) {
+        if (newReq != null &&
+            newReq['status'] == 'pending' &&
+            (oldReq == null || oldReq['id'] != newReq['id'])) {
           _showNotificationDialog();
         }
         setState(() {
@@ -100,12 +101,18 @@ class _PartnerHomeState extends State<PartnerHome> with WidgetsBindingObserver {
       context: context,
       builder: (_) => AlertDialog(
         title: Text(s.tr('داواکاری نوێ!', 'New Request!', 'طلب جديد!')),
-        content: Text(s.tr('کڕیارێک داوای یارمەتی دەکات. تکایە زوو وەڵام بدەرەوە.', 'A customer is requesting help. Please respond quickly.', 'عميل يطلب المساعدة. يرجى الرد بسرعة.')),
+        content: Text(
+          s.tr(
+            'کڕیارێک داوای یارمەتی دەکات. تکایە زوو وەڵام بدەرەوە.',
+            'A customer is requesting help. Please respond quickly.',
+            'عميل يطلب المساعدة. يرجى الرد بسرعة.',
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(s.tr('باشە', 'OK', 'حسناً')),
-          )
+          ),
         ],
       ),
     );
@@ -155,10 +162,7 @@ class _PartnerHomeState extends State<PartnerHome> with WidgetsBindingObserver {
       await s.api.call(
         '/dispatch/${action == 'decline' ? 'decline' : 'accept'}/${request['fitter_token']}',
         method: 'POST',
-        body: {
-          'fitter_code': code,
-          'action': action,
-        },
+        body: {'fitter_code': code, 'action': action},
       );
       await poll();
     } catch (e) {
@@ -171,13 +175,7 @@ class _PartnerHomeState extends State<PartnerHome> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: Text(
-        s.tr(
-          'فیتەری خێرا · هاوبەش',
-          'Nearest Fitter · Partner',
-          'أقرب فني · الشريك',
-        ),
-      ),
+      title: brandTitle(s, partner: true),
       actions: [
         if (code != null)
           IconButton(
@@ -430,7 +428,8 @@ class _PartnerHomeState extends State<PartnerHome> with WidgetsBindingObserver {
             ),
             if (request['user_phone'] != null)
               OutlinedButton.icon(
-                onPressed: () => launchUrl(Uri.parse('tel:${request['user_phone']}')),
+                onPressed: () =>
+                    launchUrl(Uri.parse('tel:${request['user_phone']}')),
                 icon: const Icon(Icons.call),
                 label: Text(
                   s.tr('پەیوەندی بە کڕیار', 'Call customer', 'اتصل بالعميل'),

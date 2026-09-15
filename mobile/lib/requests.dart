@@ -38,7 +38,9 @@ class _RequestPageState extends State<RequestPage> {
     bool canSubmit = selected != null && phone.text.trim().length >= 10;
     return Scaffold(
       appBar: AppBar(
-        title: Text(s.tr('داوای یارمەتی', 'Request roadside help', 'طلب مساعدة')),
+        title: Text(
+          s.tr('داوای یارمەتی', 'Request roadside help', 'طلب مساعدة'),
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(20),
@@ -78,7 +80,9 @@ class _RequestPageState extends State<RequestPage> {
               if (mounted) setState(() => selected = point);
             }),
             icon: const Icon(Icons.my_location),
-            label: Text(s.tr('شوێنی ئێستام', 'Use my location', 'استخدام موقعي')),
+            label: Text(
+              s.tr('شوێنی ئێستام', 'Use my location', 'استخدام موقعي'),
+            ),
           ),
           if (selected != null)
             Text(
@@ -206,7 +210,9 @@ class _RequestStatusState extends State<RequestStatus> {
         timer?.cancel();
       } else if (['accepted', 'en_route'].contains(result['status'])) {
         try {
-          final loc = await s.api.call('/dispatch/${widget.token}/fitter-location') as Json;
+          final loc =
+              await s.api.call('/dispatch/${widget.token}/fitter-location')
+                  as Json;
           if (mounted && loc['fitter_lat'] != null) {
             setState(() {
               request!['fitter_lat'] = loc['fitter_lat'];
@@ -280,113 +286,194 @@ class _RequestStatusState extends State<RequestStatus> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text(s.tr('داواکاریی تۆ', 'Your request', 'طلبك'))),
-    body: request == null
-        ? Center(
-            child: error == null
-                ? busy()
-                : Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      empty(error!),
-                      FilledButton(
-                        onPressed: poll,
-                        child: Text(
-                          s.tr('هەوڵدانەوە', 'Retry', 'إعادة المحاولة'),
-                        ),
-                      ),
-                    ],
-                  ),
-          )
-        : ListView(
-            padding: const EdgeInsets.all(24),
-            children: [
-              const Icon(Icons.route, size: 72, color: accent),
-              const SizedBox(height: 24),
-              Text(
-                label(request!['status']),
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 16),
-              if (error != null) Text(error!),
-              if (request!['fitter_name'] != null)
-                Text('${request!['fitter_name']}', textAlign: TextAlign.center),
-              const SizedBox(height: 20),
-              if (request!['user_lat'] is num && request!['fitter_lat'] is num)
-                SizedBox(
-                  height: 300,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(24),
-                    child: FlutterMap(
-                      options: MapOptions(
-                        initialCenter: LatLng(request!['fitter_lat'], request!['fitter_lng']),
-                        initialZoom: 14,
-                      ),
-                      children: [
-                        TileLayer(
-                          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                        ),
-                        PolylineLayer(
-                          polylines: [
-                            Polyline(
-                              points: [
-                                LatLng(request!['user_lat'], request!['user_lng']),
-                                LatLng(request!['fitter_lat'], request!['fitter_lng']),
-                              ],
-                              color: accent,
-                              strokeWidth: 4,
-                            ),
-                          ],
-                        ),
-                        MarkerLayer(
-                          markers: [
-                            Marker(
-                              point: LatLng(request!['user_lat'], request!['user_lng']),
-                              child: const Icon(Icons.location_on, color: Colors.blue, size: 40),
-                            ),
-                            Marker(
-                              point: LatLng(request!['fitter_lat'], request!['fitter_lng']),
-                              child: const Icon(Icons.directions_car, color: accent, size: 40),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              if (request!['user_lat'] is num && request!['fitter_lat'] == null)
-                SizedBox(
-                  height: 260,
-                  child: MapPanel(
-                    state: s,
-                    picked: LatLng(
+  Widget build(BuildContext context) {
+    final hasLiveLocation =
+        request?['user_lat'] is num &&
+        request?['fitter_lat'] is num &&
+        request?['fitter_lng'] is num;
+    final etaMinutes = hasLiveLocation
+        ? (const Distance().as(
+                    LengthUnit.Kilometer,
+                    LatLng(
                       (request!['user_lat'] as num).toDouble(),
                       (request!['user_lng'] as num).toDouble(),
                     ),
-                  ),
+                    LatLng(
+                      (request!['fitter_lat'] as num).toDouble(),
+                      (request!['fitter_lng'] as num).toDouble(),
+                    ),
+                  ) /
+                  .55)
+              .ceil()
+        : null;
+    return Scaffold(
+      appBar: AppBar(title: Text(s.tr('داواکاریی تۆ', 'Your request', 'طلبك'))),
+      body: request == null
+          ? Center(
+              child: error == null
+                  ? busy()
+                  : Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        empty(error!),
+                        FilledButton(
+                          onPressed: poll,
+                          child: Text(
+                            s.tr('هەوڵدانەوە', 'Retry', 'إعادة المحاولة'),
+                          ),
+                        ),
+                      ],
+                    ),
+            )
+          : ListView(
+              padding: const EdgeInsets.all(24),
+              children: [
+                const Icon(Icons.route, size: 72, color: accent),
+                const SizedBox(height: 24),
+                Text(
+                  label(request!['status']),
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.headlineSmall,
                 ),
-              const SizedBox(height: 24),
-              if (['expired', 'declined'].contains(request!['status']))
-                FilledButton(
-                  onPressed: acting ? null : () => action(true),
-                  child: Text(
-                    s.tr(
-                      'گەڕان بۆ فیتەرێکی تر',
-                      'Find another fitter',
-                      'البحث عن فني آخر',
+                const SizedBox(height: 16),
+                if (error != null) Text(error!),
+                if (request!['fitter_name'] != null)
+                  Text(
+                    '${request!['fitter_name']}',
+                    textAlign: TextAlign.center,
+                  ),
+                const SizedBox(height: 20),
+                if (['accepted', 'en_route'].contains(request!['status'])) ...[
+                  Card(
+                    color: accent.withValues(alpha: .13),
+                    child: ListTile(
+                      leading: const Icon(
+                        Icons.location_searching,
+                        color: accent,
+                      ),
+                      title: Text(
+                        s.tr(
+                          'شوێنی ڕاستەوخۆی فیتەر',
+                          'Live fitter location',
+                          'موقع الفني المباشر',
+                        ),
+                      ),
+                      subtitle: Text(
+                        etaMinutes == null
+                            ? s.tr(
+                                'چاوەڕوانی نوێبوونەوەی شوێنی فیتەر…',
+                                'Waiting for the fitter location…',
+                                'بانتظار موقع الفني…',
+                              )
+                            : s.tr(
+                                'نزیکەی $etaMinutes خولەک تا گەیشتن',
+                                'About $etaMinutes minutes to arrive',
+                                'حوالي $etaMinutes دقيقة للوصول',
+                              ),
+                      ),
                     ),
                   ),
-                ),
-              if (!['completed', 'cancelled'].contains(request!['status']))
-                OutlinedButton(
-                  onPressed: acting ? null : () => action(false),
-                  child: Text(
-                    s.tr('هەڵوەشاندنەوە', 'Cancel request', 'إلغاء الطلب'),
+                  const SizedBox(height: 12),
+                ],
+                if (hasLiveLocation)
+                  SizedBox(
+                    height: 300,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: FlutterMap(
+                        options: MapOptions(
+                          initialCenter: LatLng(
+                            request!['fitter_lat'],
+                            request!['fitter_lng'],
+                          ),
+                          initialZoom: 14,
+                        ),
+                        children: [
+                          TileLayer(
+                            urlTemplate:
+                                'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          ),
+                          PolylineLayer(
+                            polylines: [
+                              Polyline(
+                                points: [
+                                  LatLng(
+                                    request!['user_lat'],
+                                    request!['user_lng'],
+                                  ),
+                                  LatLng(
+                                    request!['fitter_lat'],
+                                    request!['fitter_lng'],
+                                  ),
+                                ],
+                                color: accent,
+                                strokeWidth: 4,
+                              ),
+                            ],
+                          ),
+                          MarkerLayer(
+                            markers: [
+                              Marker(
+                                point: LatLng(
+                                  request!['user_lat'],
+                                  request!['user_lng'],
+                                ),
+                                child: const Icon(
+                                  Icons.location_on,
+                                  color: Colors.blue,
+                                  size: 40,
+                                ),
+                              ),
+                              Marker(
+                                point: LatLng(
+                                  request!['fitter_lat'],
+                                  request!['fitter_lng'],
+                                ),
+                                child: const Icon(
+                                  Icons.directions_car,
+                                  color: accent,
+                                  size: 40,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-            ],
-          ),
-  );
+                if (request!['user_lat'] is num &&
+                    request!['fitter_lat'] == null)
+                  SizedBox(
+                    height: 260,
+                    child: MapPanel(
+                      state: s,
+                      picked: LatLng(
+                        (request!['user_lat'] as num).toDouble(),
+                        (request!['user_lng'] as num).toDouble(),
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 24),
+                if (['expired', 'declined'].contains(request!['status']))
+                  FilledButton(
+                    onPressed: acting ? null : () => action(true),
+                    child: Text(
+                      s.tr(
+                        'گەڕان بۆ فیتەرێکی تر',
+                        'Find another fitter',
+                        'البحث عن فني آخر',
+                      ),
+                    ),
+                  ),
+                if (!['completed', 'cancelled'].contains(request!['status']))
+                  OutlinedButton(
+                    onPressed: acting ? null : () => action(false),
+                    child: Text(
+                      s.tr('هەڵوەشاندنەوە', 'Cancel request', 'إلغاء الطلب'),
+                    ),
+                  ),
+              ],
+            ),
+    );
+  }
 }
