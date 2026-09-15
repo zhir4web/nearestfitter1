@@ -21,6 +21,9 @@ class _RequestPageState extends State<RequestPage> {
   void initState() {
     super.initState();
     selected = s.location;
+    phone.addListener(() {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
@@ -31,89 +34,93 @@ class _RequestPageState extends State<RequestPage> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: Text(s.tr('داوای یارمەتی', 'Request roadside help', 'طلب مساعدة')),
-    ),
-    body: ListView(
-      padding: const EdgeInsets.all(20),
-      children: [
-        Text(
-          widget.fitter?['name'] ??
-              s.tr(
-                'نزیکترین فیتەری بەردەست',
-                'Nearest available fitter',
-                'أقرب فني متاح',
-              ),
-          style: Theme.of(context).textTheme.headlineSmall,
-        ),
-        const SizedBox(height: 12),
-        Text(
-          s.tr(
-            'شوێنەکەت لەسەر نەخشە دیاری بکە.',
-            'Tap the map to select your location.',
-            'حدد موقعك على الخريطة.',
-          ),
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 280,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(24),
-            child: MapPanel(
-              state: s,
-              picked: selected,
-              onPick: (point) => setState(() => selected = point),
-            ),
-          ),
-        ),
-        TextButton.icon(
-          onPressed: () => perform(context, () async {
-            final point = await s.locate();
-            if (mounted) setState(() => selected = point);
-          }),
-          icon: const Icon(Icons.my_location),
-          label: Text(s.tr('شوێنی ئێستام', 'Use my location', 'استخدام موقعي')),
-        ),
-        if (selected != null)
+  Widget build(BuildContext context) {
+    bool canSubmit = selected != null && phone.text.trim().length >= 10;
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(s.tr('داوای یارمەتی', 'Request roadside help', 'طلب مساعدة')),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
           Text(
-            '${selected!.latitude.toStringAsFixed(5)}, ${selected!.longitude.toStringAsFixed(5)}',
-            textDirection: TextDirection.ltr,
+            widget.fitter?['name'] ??
+                s.tr(
+                  'نزیکترین فیتەری بەردەست',
+                  'Nearest available fitter',
+                  'أقرب فني متاح',
+                ),
+            style: Theme.of(context).textTheme.headlineSmall,
           ),
-        const SizedBox(height: 14),
-        TextField(
-          controller: phone,
-          keyboardType: TextInputType.phone,
-          decoration: InputDecoration(
-            labelText: s.tr('ژمارەی تۆ', 'Your phone number', 'رقم هاتفك'),
-          ),
-        ),
-        const SizedBox(height: 14),
-        TextField(
-          controller: note,
-          maxLength: 500,
-          maxLines: 3,
-          decoration: InputDecoration(
-            labelText: s.tr(
-              'کێشەکە و نیشانەی شوێن',
-              'Problem and location details',
-              'المشكلة وتفاصيل الموقع',
+          const SizedBox(height: 12),
+          Text(
+            s.tr(
+              'شوێنەکەت لەسەر نەخشە دیاری بکە.',
+              'Tap the map to select your location.',
+              'حدد موقعك على الخريطة.',
             ),
           ),
-        ),
-        const SizedBox(height: 16),
-        FilledButton.icon(
-          onPressed: saving || selected == null ? null : submit,
-          icon: const Icon(Icons.send),
-          label: Text(
-            saving
-                ? s.tr('دەنێردرێت…', 'Sending…', 'جار الإرسال…')
-                : s.tr('ناردنی داواکاری', 'Send request', 'إرسال الطلب'),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 280,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: MapPanel(
+                state: s,
+                picked: selected,
+                onPick: (point) => setState(() => selected = point),
+              ),
+            ),
           ),
-        ),
-      ],
-    ),
-  );
+          TextButton.icon(
+            onPressed: () => perform(context, () async {
+              final point = await s.locate();
+              if (mounted) setState(() => selected = point);
+            }),
+            icon: const Icon(Icons.my_location),
+            label: Text(s.tr('شوێنی ئێستام', 'Use my location', 'استخدام موقعي')),
+          ),
+          if (selected != null)
+            Text(
+              '${selected!.latitude.toStringAsFixed(5)}, ${selected!.longitude.toStringAsFixed(5)}',
+              textDirection: TextDirection.ltr,
+            ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: phone,
+            keyboardType: TextInputType.phone,
+            decoration: InputDecoration(
+              labelText: s.tr('ژمارەی تۆ', 'Your phone number', 'رقم هاتفك'),
+            ),
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: note,
+            maxLength: 500,
+            maxLines: 3,
+            decoration: InputDecoration(
+              labelText: s.tr(
+                'کێشەکە و نیشانەی شوێن',
+                'Problem and location details',
+                'المشكلة وتفاصيل الموقع',
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            onPressed: saving || !canSubmit ? null : submit,
+            icon: const Icon(Icons.send),
+            label: Text(
+              saving
+                  ? s.tr('دەنێردرێت…', 'Sending…', 'جار الإرسال…')
+                  : s.tr('ناردنی داواکاری', 'Send request', 'إرسال الطلب'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> submit() async {
     if (!RegExp(r'^\+?[0-9 ()-]{7,22}$').hasMatch(phone.text.trim())) {
       toast(
@@ -197,6 +204,16 @@ class _RequestStatusState extends State<RequestStatus> {
       }
       if (['completed', 'cancelled'].contains(result['status'])) {
         timer?.cancel();
+      } else if (['accepted', 'en_route'].contains(result['status'])) {
+        try {
+          final loc = await s.api.call('/dispatch/${widget.token}/fitter-location') as Json;
+          if (mounted && loc['fitter_lat'] != null) {
+            setState(() {
+              request!['fitter_lat'] = loc['fitter_lat'];
+              request!['fitter_lng'] = loc['fitter_lng'];
+            });
+          }
+        } catch (_) {}
       }
     } catch (e) {
       if (mounted) setState(() => error = errorText(e));
@@ -297,7 +314,49 @@ class _RequestStatusState extends State<RequestStatus> {
               if (request!['fitter_name'] != null)
                 Text('${request!['fitter_name']}', textAlign: TextAlign.center),
               const SizedBox(height: 20),
-              if (request!['user_lat'] is num)
+              if (request!['user_lat'] is num && request!['fitter_lat'] is num)
+                SizedBox(
+                  height: 300,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: FlutterMap(
+                      options: MapOptions(
+                        initialCenter: LatLng(request!['fitter_lat'], request!['fitter_lng']),
+                        initialZoom: 14,
+                      ),
+                      children: [
+                        TileLayer(
+                          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        ),
+                        PolylineLayer(
+                          polylines: [
+                            Polyline(
+                              points: [
+                                LatLng(request!['user_lat'], request!['user_lng']),
+                                LatLng(request!['fitter_lat'], request!['fitter_lng']),
+                              ],
+                              color: accent,
+                              strokeWidth: 4,
+                            ),
+                          ],
+                        ),
+                        MarkerLayer(
+                          markers: [
+                            Marker(
+                              point: LatLng(request!['user_lat'], request!['user_lng']),
+                              child: const Icon(Icons.location_on, color: Colors.blue, size: 40),
+                            ),
+                            Marker(
+                              point: LatLng(request!['fitter_lat'], request!['fitter_lng']),
+                              child: const Icon(Icons.directions_car, color: accent, size: 40),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              if (request!['user_lat'] is num && request!['fitter_lat'] == null)
                 SizedBox(
                   height: 260,
                   child: MapPanel(

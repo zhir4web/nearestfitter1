@@ -53,14 +53,21 @@ export async function requireAdmin() {
 }
 export function sameOrigin(req: Request) {
   const origin = req.headers.get('origin');
+  if (!origin) return; // Allow if browser omitted the Origin header (often true for same-origin)
   let accepted = false;
   try {
-    const parsed = new URL(origin || '');
-    const target = new URL(req.url);
-    accepted = parsed.origin === target.origin && !parsed.username && !parsed.password;
-  } catch { /* Invalid or missing Origin is rejected. */ }
-  if (!accepted)
+    const parsed = new URL(origin);
+    const host = req.headers.get('host') || '';
+    // Allow if origin matches the Host header, or if it's localhost/127.0.0.1 for local dev
+    accepted = 
+      parsed.host === host || 
+      parsed.hostname === 'localhost' || 
+      parsed.hostname === '127.0.0.1';
+  } catch (err) { /* Invalid Origin is rejected. */ }
+  if (!accepted) {
+    console.log('sameOrigin rejected');
     throw new HttpError(403, 'Origin rejected');
+  }
 }
 export async function rate(
   req: Request,

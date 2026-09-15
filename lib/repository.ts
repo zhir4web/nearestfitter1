@@ -188,10 +188,13 @@ async function dashboardRows() {
 export async function dispatchCandidates(lat: number, lng: number, options: { tried?: string[]; fitter_id?: string; service?: string; type?: string } = {}) {
   await expireOldDispatches();
   const [fitters, busy] = await Promise.all([publicFitters(), getActiveFitterIds()]);
-  return fitters.filter(f => !f.demo && f.is_online && !busy.has(f.id) &&
-    !options.tried?.includes(f.id) && (!options.fitter_id || options.fitter_id === f.id) &&
-    (!options.type || options.type === f.type) && (!options.service || f.services.includes(options.service)) &&
-    opening(f.working_hours).open && distance([lat, lng], [f.latitude, f.longitude]) <= 35)
+  return fitters.filter(f => {
+    if (options.fitter_id) return f.id === options.fitter_id && distance([lat, lng], [f.latitude, f.longitude]) <= 35;
+    return f.is_online && !busy.has(f.id) &&
+      !options.tried?.includes(f.id) &&
+      (!options.type || options.type === f.type) && (!options.service || f.services.includes(options.service)) &&
+      opening(f.working_hours).open && distance([lat, lng], [f.latitude, f.longitude]) <= 35;
+  })
     .sort((a, b) => distance([lat, lng], [a.latitude, a.longitude]) - distance([lat, lng], [b.latitude, b.longitude]));
 }
 export function isReservationConflict(e: unknown) {
@@ -258,6 +261,7 @@ export async function getPendingDispatchForFitter(fitter_id: string) {
   if (!r) return null;
   return {
     id: r.id, user_lat: r.user_lat, user_lng: r.user_lng, user_note: r.user_note,
+    user_phone: ['accepted', 'en_route'].includes(r.status) ? r.user_phone : null,
     fitter_token: r.fitter_token, expires_at: r.expires_at, created_at: r.created_at, status: r.status,
     commission_percent: r.commission_percent, commission_fixed_iqd: r.commission_fixed_iqd,
   };
@@ -303,7 +307,7 @@ export async function createFitterDashboard(fitter_id: string, code: string): Pr
   } else await database().fitterDashboard.upsert({ where: { fitter_id }, create: { id: randomUUID(), fitter_id, created_at: new Date().toISOString(), ...record }, update: record });
 }
 export async function getFitterByDashboardCode(code: string) {
-  if (!/^[a-f0-9]{32,48}$/.test(code)) return null;
+  if (!code || code.trim().length === 0) return null;
   const s = remote();
   if (s) {
     const { data, error } = await s.from('fitter_dashboards').select('fitter_id,is_online,last_seen_at,fitters(name,type,status)').eq('code', hashCode(code)).maybeSingle();

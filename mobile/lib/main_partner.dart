@@ -76,6 +76,11 @@ class _PartnerHomeState extends State<PartnerHome> with WidgetsBindingObserver {
     try {
       final result = await s.api.call('/fitter/dashboard/$code') as Json;
       if (mounted) {
+        final oldReq = data?['request'];
+        final newReq = result['request'];
+        if (newReq != null && newReq['status'] == 'pending' && (oldReq == null || oldReq['id'] != newReq['id'])) {
+          _showNotificationDialog();
+        }
         setState(() {
           data = result;
           error = null;
@@ -88,6 +93,22 @@ class _PartnerHomeState extends State<PartnerHome> with WidgetsBindingObserver {
     } finally {
       polling = false;
     }
+  }
+
+  void _showNotificationDialog() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(s.tr('داواکاری نوێ!', 'New Request!', 'طلب جديد!')),
+        content: Text(s.tr('کڕیارێک داوای یارمەتی دەکات. تکایە زوو وەڵام بدەرەوە.', 'A customer is requesting help. Please respond quickly.', 'عميل يطلب المساعدة. يرجى الرد بسرعة.')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(s.tr('باشە', 'OK', 'حسناً')),
+          )
+        ],
+      ),
+    );
   }
 
   Future<void> heartbeat() async {
@@ -129,18 +150,6 @@ class _PartnerHomeState extends State<PartnerHome> with WidgetsBindingObserver {
   Future<void> act(String action) async {
     final request = data?['request'];
     if (request == null) return;
-    final amount = num.tryParse(price.text);
-    if (action == 'complete' && (amount == null || amount < 0)) {
-      toast(
-        context,
-        s.tr(
-          'نرخێکی دروست بنووسە',
-          'Enter a valid price',
-          'أدخل مبلغاً صحيحاً',
-        ),
-      );
-      return;
-    }
     setState(() => working = true);
     try {
       await s.api.call(
@@ -149,7 +158,6 @@ class _PartnerHomeState extends State<PartnerHome> with WidgetsBindingObserver {
         body: {
           'fitter_code': code,
           'action': action,
-          if (action == 'complete') 'final_price_iqd': amount,
         },
       );
       await poll();
@@ -239,8 +247,8 @@ class _PartnerHomeState extends State<PartnerHome> with WidgetsBindingObserver {
                 onPressed: working
                     ? null
                     : () async {
-                        final value = input.text.trim().toLowerCase();
-                        if (!RegExp(r'^[a-f0-9]{32,48}$').hasMatch(value)) {
+                        final value = input.text.trim();
+                        if (value.length < 4 || value.length > 50) {
                           toast(
                             context,
                             s.tr(
@@ -420,6 +428,14 @@ class _PartnerHomeState extends State<PartnerHome> with WidgetsBindingObserver {
                 ),
               ),
             ),
+            if (request['user_phone'] != null)
+              OutlinedButton.icon(
+                onPressed: () => launchUrl(Uri.parse('tel:${request['user_phone']}')),
+                icon: const Icon(Icons.call),
+                label: Text(
+                  s.tr('پەیوەندی بە کڕیار', 'Call customer', 'اتصل بالعميل'),
+                ),
+              ),
             if (request['status'] == 'accepted')
               FilledButton(
                 onPressed: working ? null : () => act('en_route'),
@@ -428,18 +444,6 @@ class _PartnerHomeState extends State<PartnerHome> with WidgetsBindingObserver {
                 ),
               ),
             const SizedBox(height: 16),
-            TextField(
-              controller: price,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: s.tr(
-                  'نرخی کۆتایی · دینار',
-                  'Final price · IQD',
-                  'السعر النهائي · دينار',
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
             FilledButton(
               onPressed: working ? null : () => act('complete'),
               child: Text(

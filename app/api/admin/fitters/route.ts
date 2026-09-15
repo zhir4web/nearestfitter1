@@ -50,11 +50,15 @@ export async function POST(req: Request) {
     let dashboard_code: string | undefined;
     if (existing) {
       await update('fitters', id, record);
+      if (typeof raw.dashboard_code === 'string' && raw.dashboard_code.trim().length > 0) {
+        dashboard_code = raw.dashboard_code.trim();
+        await createFitterDashboard(id, dashboard_code as string);
+      }
     } else {
       await insert('fitters', record);
       // Auto-create dashboard for new fitters (approved or pending)
-      dashboard_code = newDashboardCode();
-      await createFitterDashboard(id, dashboard_code);
+      dashboard_code = typeof raw.dashboard_code === 'string' && raw.dashboard_code.trim().length > 0 ? raw.dashboard_code.trim() : newDashboardCode();
+      await createFitterDashboard(id, dashboard_code as string);
     }
     if (existing?.photo_url && existing.photo_url !== record.photo_url)
       await removePhoto(existing.photo_url);

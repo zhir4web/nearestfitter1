@@ -27,14 +27,14 @@ class Api {
     });
     if (body != null) request.body = jsonEncode(body);
     final response = await http.Response.fromStream(
-      await client.send(request).timeout(const Duration(seconds: 20)),
+      await client.send(request).timeout(const Duration(seconds: 60)),
     );
     dynamic data;
     try {
       data = jsonDecode(response.body);
     } catch (_) {
       throw Exception(
-        'Server response is unavailable (${response.statusCode}).',
+        'تکایە چەند چرکەیەک چاوەڕێ بکە و دووبارە هەوڵ بدەوە (${response.statusCode})',
       );
     }
     if (response.statusCode >= 400) {

@@ -551,19 +551,18 @@ class FitterDetail extends StatelessWidget {
           style: Theme.of(context).textTheme.headlineSmall,
         ),
         const SizedBox(height: 18),
-        if (fitter['demo'] != true)
-          FilledButton.icon(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => RequestPage(state: state, fitter: fitter),
-              ),
-            ),
-            icon: const Icon(Icons.bolt),
-            label: Text(
-              state.tr('داوای یارمەتی', 'Request help', 'طلب المساعدة'),
+        FilledButton.icon(
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => RequestPage(state: state, fitter: fitter),
             ),
           ),
+          icon: const Icon(Icons.bolt),
+          label: Text(
+            state.tr('داوای یارمەتی', 'Request help', 'طلب المساعدة'),
+          ),
+        ),
         const SizedBox(height: 12),
         OutlinedButton.icon(
           onPressed: () => perform(context, () async {

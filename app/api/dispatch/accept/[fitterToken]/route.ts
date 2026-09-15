@@ -14,21 +14,19 @@ export async function POST(req: Request, { params }: { params: Promise<{ fitterT
     let changed = false;
     if (action === 'accept') {
       const settings = await platformSettings();
+      // Bill the fixed commission immediately upon acceptance.
       changed = await transitionDispatch(fitterToken, 'fitter', ['pending'], 'accepted', {
         fitter_id: fitter.fitter_id, accepted_at: new Date().toISOString(),
-        ...settings, commission_status: 'pending',
+        ...settings, commission_iqd: settings.commission_fixed_iqd, commission_status: 'due',
       });
     } else if (action === 'en_route') {
       changed = await transitionDispatch(fitterToken, 'fitter', ['accepted'], 'en_route');
     } else if (action === 'complete') {
-      const price = body.final_price_iqd;
-      if (typeof price !== 'number' || !Number.isSafeInteger(price) || price < 0 || price > 10_000_000)
-        throw new HttpError(400, 'Enter a valid final price in IQD');
       const full = await getDispatchById(dispatch.id);
       if (!full) throw new HttpError(404, 'Request not found');
-      const fee = Math.min(price, Math.round(price * full.commission_percent / 100) + full.commission_fixed_iqd);
+      // Finalizing job, commission was already recorded on accept. No price required from fitter.
       changed = await transitionDispatch(fitterToken, 'fitter', ['accepted', 'en_route'], 'completed', {
-        completed_at: new Date().toISOString(), final_price_iqd: price, commission_iqd: fee, commission_status: 'due',
+        completed_at: new Date().toISOString(),
       });
     } else throw new HttpError(400, 'Unknown action');
     if (!changed) throw new HttpError(409, 'This request changed or expired. Refresh to see its status.');

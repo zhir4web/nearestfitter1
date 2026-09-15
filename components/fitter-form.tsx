@@ -94,6 +94,7 @@ export function FitterForm({
       status,
       demo,
       removePhoto,
+      dashboard_code: form.get('dashboard_code'),
     };
     const body = new FormData();
     body.set('data', JSON.stringify(data));
@@ -338,6 +339,16 @@ export function FitterForm({
               </SelectContent>
             </Select>
           </div>
+          <label className="field mt-4">
+            کۆدی تایبەت / پاسوۆرد (ئارەزوومەندانە)
+            <input
+              name="dashboard_code"
+              type="text"
+              minLength={4}
+              maxLength={50}
+              placeholder="ئەگەر بەتاڵ بێت، ئۆتۆماتیکی دروست دەبێت"
+            />
+          </label>
           <label className="check-label mt-4">
             <Checkbox
               checked={demo}
