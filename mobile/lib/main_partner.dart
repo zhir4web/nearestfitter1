@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'core.dart';
@@ -26,7 +26,6 @@ class PartnerHome extends StatefulWidget {
 }
 
 class _PartnerHomeState extends State<PartnerHome> with WidgetsBindingObserver {
-  static const storage = FlutterSecureStorage();
   final input = TextEditingController(), price = TextEditingController();
   Timer? timer;
   String? code, error;
@@ -41,7 +40,8 @@ class _PartnerHomeState extends State<PartnerHome> with WidgetsBindingObserver {
   }
 
   Future<void> restore() async {
-    code = await storage.read(key: 'fitter_code');
+    final prefs = await SharedPreferences.getInstance();
+    code = prefs.getString('fitter_code');
     if (mounted) setState(() {});
     if (code != null) start();
   }
@@ -187,7 +187,8 @@ class _PartnerHomeState extends State<PartnerHome> with WidgetsBindingObserver {
                       if (context.mounted) toast(context, e);
                       return;
                     }
-                    await storage.delete(key: 'fitter_code');
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.remove('fitter_code');
                     timer?.cancel();
                     if (mounted) {
                       setState(() {
@@ -253,7 +254,8 @@ class _PartnerHomeState extends State<PartnerHome> with WidgetsBindingObserver {
                         setState(() => working = true);
                         try {
                           await s.api.call('/fitter/dashboard/$value');
-                          await storage.write(key: 'fitter_code', value: value);
+                          final prefs = await SharedPreferences.getInstance();
+                          await prefs.setString('fitter_code', value);
                           if (mounted) setState(() => code = value);
                           start();
                         } catch (e) {

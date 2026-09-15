@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'core.dart';
 
 class CommunityPage extends StatefulWidget {
@@ -237,8 +237,8 @@ class _PostFormState extends State<PostForm> {
                 : () async {
                     setState(() => saving = true);
                     try {
-                      const storage = FlutterSecureStorage();
-                      final token = await storage.read(key: 'community_owner');
+                      final prefs = await SharedPreferences.getInstance();
+                      final token = prefs.getString('community_owner');
                       final result = await s.api.call(
                         '/community',
                         method: 'POST',
@@ -249,10 +249,7 @@ class _PostFormState extends State<PostForm> {
                           'website': '',
                         },
                       );
-                      await storage.write(
-                        key: 'community_owner',
-                        value: result['owner_token'],
-                      );
+                      await prefs.setString('community_owner', result['owner_token']);
                       if (context.mounted) Navigator.pop(context);
                     } catch (e) {
                       if (context.mounted) toast(context, e);
