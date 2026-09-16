@@ -1,0 +1,93 @@
+name: Build Flutter apps
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "mobile/**"
+      - ".github/workflows/flutter-build.yml"
+  workflow_dispatch:
+    inputs:
+      api_base_url:
+        description: "Public backend URL, for example https://your-project.vercel.app"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: flutter-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Customer, fitter, and web builds
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    env:
+      API_BASE_URL: ${{ inputs.api_base_url || vars.API_BASE_URL }}
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install packages
+        run: flutter pub get
+
+      - name: Check Dart code
+        run: flutter analyze
+
+      - name: Run Flutter tests
+        run: flutter test
+
+      - name: Build customer APK
+        if: env.API_BASE_URL != ''
+        run: flutter build apk --release --flavor customer --dart-define=API_BASE_URL=${{ env.API_BASE_URL }}
+
+      - name: Build fitter APK
+        if: env.API_BASE_URL != ''
+        run: flutter build apk --release --flavor partner --target lib/main_partner.dart --dart-define=API_BASE_URL=${{ env.API_BASE_URL }}
+
+      - name: Build Flutter web
+        run: flutter build web --release --dart-define=API_BASE_URL=${{ env.API_BASE_URL }}
+
+      - name: Upload customer APK
+        if: env.API_BASE_URL != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: nearest-fitter-customer-apk
+          path: mobile/build/app/outputs/flutter-apk/app-customer-release.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload fitter APK
+        if: env.API_BASE_URL != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: nearest-fitter-partner-apk
+          path: mobile/build/app/outputs/flutter-apk/app-partner-release.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload Flutter web
+        uses: actions/upload-artifact@v4
+        with:
+          name: nearest-fitter-flutter-web
+          path: mobile/build/web
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Explain missing backend URL
+        if: env.API_BASE_URL == ''
+        run: |
+          echo "Flutter web was built successfully."
+          echo "Set the repository variable API_BASE_URL to the public backend URL to enable automatic APK builds."
