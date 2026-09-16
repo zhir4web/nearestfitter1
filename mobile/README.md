@@ -30,6 +30,12 @@ After a successful run, open **Actions → Build Flutter apps**, select the late
 
 GitHub keeps the source and produces installable files. The Next.js API and database still need a public deployment so installed Android apps can work when the development computer is off.
 
+## Always-open local preview
+
+Run `scripts/preview-customer.ps1` to keep the customer Flutter app open in Chrome at `http://127.0.0.1:8080`. Run `scripts/preview-partner.ps1` for the fitter app at `http://127.0.0.1:8081`. The scripts also start the local API on port `3100` when needed and map the long Windows paths to short drive letters so Flutter build hooks work correctly.
+
+Keep the PowerShell window open. After saving a Dart change, press `r` in that window for Flutter hot reload; the app stays on the same screen while the new design appears.
+
 A new Flutter project.
 
 ## Getting Started

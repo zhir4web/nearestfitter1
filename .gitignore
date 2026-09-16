@@ -52,3 +52,6 @@ next-env.d.ts
 # local Flutter/Dart tool state used only during analysis
 /mobile/.dart-appdata/
 /mobile/.dart-localappdata/
+/mobile/.pub-cache/
+/mobile/.preview-appdata/
+/mobile/.preview-localappdata/
