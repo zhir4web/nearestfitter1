@@ -1,7 +1,8 @@
 'use client';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { CircleDot, Home, Map, MessageSquare, Settings, Heart, Sun, Moon, MapPin, ShieldCheck } from 'lucide-react';
+import { Home, Map, MessageSquare, Settings, Heart, Sun, Moon, MapPin, ShieldCheck } from 'lucide-react';
 import { useLanguage } from './language';
 import { usePreferences } from './preferences';
 import { appCopy } from '@/lib/app-copy';
@@ -13,7 +14,7 @@ export function Header() {
   const { theme, setTheme, favorites } = usePreferences();
   const privateArea = path.startsWith('/admin') || path.startsWith('/fitter');
   const links = [
-    { href: '/', label: copy.home, Icon: Home },
+    { href: '/find', label: copy.home, Icon: Home },
     { href: '/map', label: t.map, Icon: Map },
     { href: '/community', label: copy.community, Icon: MessageSquare },
     { href: '/favorites', label: copy.favorites, Icon: Heart },
@@ -24,7 +25,7 @@ export function Header() {
     <header className="nf-header">
       <div className="nf-header-inner">
         <Link href={privateArea ? (path.startsWith('/admin') ? '/admin' : '/fitter') : '/'} className="nf-brand">
-          <span className="nf-brand-mark"><CircleDot size={28} strokeWidth={2.5} /></span>
+          <span className="nf-brand-mark"><Image src="/logo-mark.svg" alt="" width={44} height={44} priority /></span>
           <span>{t.brand}<small>NEAREST<span>FITTER</span></small></span>
         </Link>
         {privateArea ? <span className="nf-private-label"><ShieldCheck size={17} />{path.startsWith('/admin') ? t.admin : t.mobile}</span> : <nav className="nf-desktop-nav" aria-label={copy.home}>

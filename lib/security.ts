@@ -53,21 +53,18 @@ export async function requireAdmin() {
 }
 export function sameOrigin(req: Request) {
   const origin = req.headers.get('origin');
-  if (!origin) return; // Allow if browser omitted the Origin header (often true for same-origin)
-  let accepted = false;
+  if (!origin) return;
   try {
     const parsed = new URL(origin);
-    const host = req.headers.get('host') || '';
-    // Allow if origin matches the Host header, or if it's localhost/127.0.0.1 for local dev
-    accepted = 
-      parsed.host === host || 
-      parsed.hostname === 'localhost' || 
-      parsed.hostname === '127.0.0.1';
-  } catch (err) { /* Invalid Origin is rejected. */ }
-  if (!accepted) {
-    console.log('sameOrigin rejected');
-    throw new HttpError(403, 'Origin rejected');
+    const forwardedHost = req.headers.get('x-forwarded-host')?.split(',')[0]?.trim();
+    const host = forwardedHost || req.headers.get('host');
+    const forwardedProtocol = req.headers.get('x-forwarded-proto')?.split(',')[0]?.trim();
+    const protocol = forwardedProtocol || new URL(req.url).protocol.replace(':', '');
+    if (host && parsed.host === host && parsed.protocol === `${protocol}:`) return;
+  } catch {
+    // Invalid origins are rejected below.
   }
+  throw new HttpError(403, 'Origin rejected');
 }
 export async function rate(
   req: Request,

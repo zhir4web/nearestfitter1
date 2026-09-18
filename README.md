@@ -54,7 +54,8 @@ The Supabase adapter and SQL are implemented, but live Supabase/Vercel validatio
 
 ## Features and decisions
 
-- `/`: Map, fixed/mobile markers, geolocation, Haversine sorting, nearest-five highlighting, neighborhood/name search, type/open/service filters, responsive draggable list, detailed profile sheet.
+- `/`: Public marketing landing page with direct entry points to the directory and roadside assistance.
+- `/find`: Fitter directory with geolocation, Haversine sorting, search, type/open/service filters and profile sheets.
 - `/add`: Required location confirmation through map click or coordinate entry, weekly hours, services, optional photos and pending submission.
 - `/admin`: Password login, add/edit/delete listings, approve pending shops, review moderation and contact inbox.
 - `/about`, `/contact`: Sorani/English/Arabic content and saved contact submissions.

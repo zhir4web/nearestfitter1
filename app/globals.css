@@ -1365,10 +1365,15 @@ h1 > span {
 }
 .honeypot {
   position: absolute;
-  left: -10000px;
   width: 1px;
   height: 1px;
+  padding: 0;
+  margin: -1px;
   overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 .photo-preview {
   height: 120px;
@@ -2295,12 +2300,12 @@ body {
   place-items: center;
   width: 43px;
   height: 43px;
-  color: #1a1408;
-  background: var(--nf-accent);
-  border-radius: 14px 14px 14px 5px;
-  transform: rotate(-6deg);
+  flex: 0 0 43px;
+  overflow: hidden;
+  border-radius: 14px;
   box-shadow: 0 9px 22px color-mix(in srgb, var(--nf-accent) 24%, transparent);
 }
+.nf-brand-mark img { display: block; width: 100%; height: 100%; }
 .nf-brand small {
   display: block;
   font-family: Manrope, sans-serif;
@@ -4212,12 +4217,26 @@ body {
     9px Manrope,
     sans-serif;
 }
-.nf-portal-community {
-  margin-top: 35px;
-}
-.nf-portal-community .nf-community-head {
-  margin-top: 0;
-}
+.nf-fitter-community { margin-top: 35px; display: grid; gap: 18px; }
+.nf-fitter-community .nf-section-heading p { max-width: 720px; color: var(--nf-muted); }
+.nf-fitter-community-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.nf-landing { min-height: calc(100vh - 84px); }
+.nf-landing-hero { min-height: calc(100vh - 165px); display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(320px, .75fr); align-items: center; gap: 70px; padding-block: 74px; }
+.nf-landing-copy { display: grid; gap: 22px; }
+.nf-landing-copy h1 { max-width: 850px; font-size: clamp(43px, 6vw, 79px); line-height: 1.06; letter-spacing: -.055em; }
+.nf-landing-copy > p { max-width: 720px; color: var(--nf-muted); font-size: clamp(15px, 1.7vw, 20px); line-height: 1.9; }
+.nf-landing-actions, .nf-landing-trust { display: flex; flex-wrap: wrap; gap: 12px; }
+.nf-landing-actions .nf-button { min-height: 54px; }
+.nf-landing-trust { padding-top: 8px; color: var(--nf-muted); }
+.nf-landing-trust span { display: inline-flex; align-items: center; gap: 7px; }
+.nf-landing-trust svg { color: var(--nf-green); }
+.nf-landing-mark { position: relative; min-height: 440px; display: grid; place-items: center; border: 1px solid var(--nf-line); border-radius: 36px; background: radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--nf-accent) 19%, transparent), transparent 38%), var(--nf-surface); box-shadow: var(--nf-shadow); overflow: hidden; }
+.nf-landing-mark > img { width: 148px; height: 148px; filter: drop-shadow(0 22px 35px color-mix(in srgb, var(--nf-accent) 27%, transparent)); }
+.nf-landing-mark > span { position: absolute; display: flex; align-items: center; gap: 8px; max-width: 220px; padding: 12px 15px; border: 1px solid var(--nf-line); border-radius: 14px; background: color-mix(in srgb, var(--nf-bg) 88%, transparent); color: var(--nf-text); font-weight: 800; font-size: 12px; backdrop-filter: blur(12px); }
+.nf-landing-mark .one { inset-inline-start: 24px; top: 32px; }
+.nf-landing-mark .two { inset-inline-end: 24px; bottom: 32px; }
+@media (max-width: 900px) { .nf-landing-hero { grid-template-columns: 1fr; gap: 34px; padding-block: 45px; } .nf-landing-mark { min-height: 320px; } .nf-fitter-community-list { grid-template-columns: 1fr; } }
+@media (max-width: 520px) { .nf-landing-hero { width: min(100% - 28px, 1240px); padding-block: 32px; } .nf-landing-copy h1 { font-size: 39px; } .nf-landing-actions { display: grid; } .nf-landing-actions .nf-button { width: 100%; } .nf-landing-mark { min-height: 285px; border-radius: 26px; } .nf-landing-mark > img { width: 112px; height: 112px; } .nf-landing-mark > span { max-width: 175px; font-size: 10px; } }
 .nf-portal-entry {
   width: min(460px, calc(100% - 28px));
   margin: 80px auto 0;

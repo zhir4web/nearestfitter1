@@ -188,11 +188,12 @@ export async function dispatchCandidates(lat: number, lng: number, options: { tr
   await expireOldDispatches();
   const [fitters, busy] = await Promise.all([publicFitters(), getActiveFitterIds()]);
   return fitters.filter(f => {
-    if (options.fitter_id) return f.id === options.fitter_id && distance([lat, lng], [f.latitude, f.longitude]) <= 35;
-    return f.is_online && !busy.has(f.id) &&
+    const available = !busy.has(f.id) && opening(f.working_hours).open && (f.type !== 'mobile' || f.is_online);
+    if (options.fitter_id) return f.id === options.fitter_id && available && distance([lat, lng], [f.latitude, f.longitude]) <= 35;
+    return available &&
       !options.tried?.includes(f.id) &&
       (!options.type || options.type === f.type) && (!options.service || f.services.includes(options.service)) &&
-      opening(f.working_hours).open && distance([lat, lng], [f.latitude, f.longitude]) <= 35;
+      distance([lat, lng], [f.latitude, f.longitude]) <= 35;
   })
     .sort((a, b) => distance([lat, lng], [a.latitude, a.longitude]) - distance([lat, lng], [b.latitude, b.longitude]));
 }

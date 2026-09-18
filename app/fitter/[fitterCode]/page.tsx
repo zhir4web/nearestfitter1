@@ -18,7 +18,7 @@ import {
   X,
 } from 'lucide-react';
 import { useLanguage } from '@/components/language';
-import { Community } from '@/components/community';
+import { FitterCommunity } from '@/components/fitter-community';
 const DispatchMap = dynamic(() => import('@/components/dispatch-map'), {
   ssr: false,
 });
@@ -588,9 +588,7 @@ export default function FitterDashboard({
           </div>
         </aside>
       </section>
-      <section className="nf-shell nf-portal-community">
-        <Community fitterCode={fitterCode} />
-      </section>
+      <FitterCommunity fitterCode={fitterCode} />
     </main>
   );
 }

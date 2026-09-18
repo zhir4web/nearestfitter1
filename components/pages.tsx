@@ -39,7 +39,7 @@ export function PublicPage({ kind }: { kind: 'add' | 'about' | 'contact' }) {
   }
   return (
     <main className={'content-page ' + (kind === 'add' ? '' : 'narrow')}>
-      <Link className="back-link" href="/">
+      <Link className="back-link" href="/find">
         {lang === 'en' ? <ArrowLeft size={17} /> : <ArrowRight size={17} />}{' '}
         {t.back}
       </Link>
@@ -71,7 +71,7 @@ export function PublicPage({ kind }: { kind: 'add' | 'about' | 'contact' }) {
       ) : kind === 'about' ? (
         <>
           <p className="policy-note">{t.aboutNote}</p>
-          <Link className="button primary mt-6" href="/">
+          <Link className="button primary mt-6" href="/find">
             {t.map}
           </Link>
         </>

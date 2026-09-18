@@ -1,5 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="18" fill="#ff8a42"/>
-  <circle cx="32" cy="32" r="17" fill="none" stroke="#211706" stroke-width="7"/>
-  <circle cx="32" cy="32" r="4" fill="#211706"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">NearestFitter</title>
+  <rect width="64" height="64" rx="18" fill="#ff782d"/>
+  <circle cx="32" cy="32" r="17" fill="none" stroke="#17110d" stroke-width="7"/>
+  <circle cx="32" cy="32" r="4" fill="#17110d"/>
 </svg>

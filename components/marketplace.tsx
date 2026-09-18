@@ -28,7 +28,7 @@ function useFitters() {
   return { fitters, loading, error, retry: load };
 }
 
-function BackLink({ href = '/' }: { href?: string }) {
+function BackLink({ href = '/find' }: { href?: string }) {
   const { lang } = useLanguage();
   return <Link className="nf-back-link" href={href}>{lang === 'en' ? <ArrowLeft size={16} /> : <ArrowRight size={16} />}<span>{lang === 'en' ? 'Back' : lang === 'ar' ? 'رجوع' : 'گەڕانەوە'}</span></Link>;
 }

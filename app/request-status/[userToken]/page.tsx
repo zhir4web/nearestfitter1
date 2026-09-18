@@ -169,7 +169,7 @@ export default function RequestStatusPage({
           <p className="error" role="alert">
             {error}
           </p>
-          <Link href="/" className="button">
+          <Link href="/find" className="button">
             <Home size={17} /> {t.back}
           </Link>
         </div>
@@ -282,7 +282,7 @@ export default function RequestStatusPage({
               </div>
             )}
 
-            <Link href="/" className="button" style={{ marginTop: '1.5rem' }}>
+            <Link href="/find" className="button" style={{ marginTop: '1.5rem' }}>
               <Home size={17} /> {t.back}
             </Link>
           </div>
@@ -297,7 +297,7 @@ export default function RequestStatusPage({
             <h2>خزمەتگوزاری تەواو بوو! ✅</h2>
             <p>فیتەرەکە کارەکەی تەواو کرد. سوپاس بۆ بەکارهێنانت.</p>
             <Link
-              href="/"
+              href="/find"
               className="button primary"
               style={{ marginTop: '1.5rem' }}
             >
@@ -315,7 +315,7 @@ export default function RequestStatusPage({
             <h2>{t.fitterDeclined}</h2>
             <p>{t.fitterDeclinedSub}</p>
             <Link
-              href="/"
+              href="/find"
               className="button primary"
               style={{ marginTop: '1.5rem' }}
             >
@@ -333,7 +333,7 @@ export default function RequestStatusPage({
             <h2>{t.noFittersOpen}</h2>
             <p>{t.requestExpiredSub}</p>
             <Link
-              href="/"
+              href="/find"
               className="button primary"
               style={{ marginTop: '1.5rem' }}
             >
@@ -350,7 +350,7 @@ export default function RequestStatusPage({
             </div>
             <h2>{t.error}</h2>
             <Link
-              href="/"
+              href="/find"
               className="button primary"
               style={{ marginTop: '1.5rem' }}
             >
