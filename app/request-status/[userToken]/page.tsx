@@ -34,7 +34,7 @@ export default function RequestStatusPage({
   params: Promise<{ userToken: string }>;
 }) {
   const { userToken } = use(params);
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const router = useRouter();
 
   const [status, setStatus] = useState<string>('pending');
@@ -192,6 +192,32 @@ export default function RequestStatusPage({
           Math.ceil(haversineKm(fitterLat, fitterLng, userLat, userLng) / 0.55),
         )
       : null;
+  const statusCopy = lang === 'en'
+    ? {
+        label: 'Request status', sent: 'Request sent', waiting: 'Waiting for the fitter',
+        private: 'Your phone number stays private', back: 'Back to fitters',
+        enRoute: 'The fitter is on the way', enRouteSub: 'The live location and estimated arrival time update on the map.',
+        live: 'Fitter on the way — live location', locationWait: 'Waiting for the fitter location…',
+        eta: (minutes: number) => `Estimated arrival: about ${minutes} minutes`, etaWait: 'Waiting for the fitter location…',
+        completed: 'Service completed! ✅', completedSub: 'The fitter marked this job complete. Thank you for using NearestFitter.',
+      }
+    : lang === 'ar'
+      ? {
+          label: 'حالة الطلب', sent: 'تم إرسال الطلب', waiting: 'بانتظار رد الفني',
+          private: 'رقم هاتفك يبقى خاصاً', back: 'العودة إلى الفنيين',
+          enRoute: 'الفني في الطريق', enRouteSub: 'يتم تحديث الموقع المباشر ووقت الوصول المتوقع على الخريطة.',
+          live: 'الفني في الطريق — الموقع المباشر', locationWait: 'بانتظار موقع الفني…',
+          eta: (minutes: number) => `الوصول المتوقع: حوالي ${minutes} دقائق`, etaWait: 'بانتظار موقع الفني…',
+          completed: 'اكتملت الخدمة! ✅', completedSub: 'أنهى الفني العمل. شكراً لاستخدامك أقرب فني.',
+        }
+      : {
+          label: 'دۆخی داواکاری', sent: 'داواکاری نێردرا', waiting: 'چاوەڕوانی وەڵامی فیتەر',
+          private: 'ژمارەکەت پارێزراوە', back: 'گەڕانەوە بۆ فیتەرەکان',
+          enRoute: 'فیتەرەکە لە ڕێگادایە', enRouteSub: 'شوێنی فیتەرەکە و کاتی گەیشتنی خەمڵێنراو لەسەر نەخشە نوێ دەبێتەوە.',
+          live: 'فیتەرەکە لە ڕێگایەوە — شوێنی ڕاستەوخۆ', locationWait: 'چاوەڕوانی شوێنی فیتەر…',
+          eta: (minutes: number) => `کاتی خەمڵێنراوی گەیشتن: نزیکەی ${minutes} خولەک`, etaWait: 'چاوەڕوانی شوێنی فیتەرەکە…',
+          completed: 'خزمەتگوزاری تەواو بوو! ✅', completedSub: 'فیتەرەکە کارەکەی تەواو کرد. سوپاس بۆ بەکارهێنانت.',
+        };
 
   return (
     <main className="status-page">
@@ -211,12 +237,12 @@ export default function RequestStatusPage({
                 {fitterName}
               </div>
             )}
-            <div className="status-waiting-steps" aria-label="دۆخی داواکاری">
-              <span className="active"><CheckCircle2 size={15} />داواکاری نێردرا</span>
-              <span><Loader2 size={15} className="spin" />چاوەڕوانی وەڵامی فیتەر</span>
-              <span><ShieldCheck size={15} />ژمارەکەت پارێزراوە</span>
+            <div className="status-waiting-steps" aria-label={statusCopy.label}>
+              <span className="active"><CheckCircle2 size={15} />{statusCopy.sent}</span>
+              <span><Loader2 size={15} className="spin" />{statusCopy.waiting}</span>
+              <span><ShieldCheck size={15} />{statusCopy.private}</span>
             </div>
-            <Link href="/find" className="status-back-link"><Home size={16} />گەڕانەوە بۆ فیتەرەکان</Link>
+            <Link href="/find" className="status-back-link"><Home size={16} />{statusCopy.back}</Link>
           </div>
         )}
 
@@ -242,12 +268,12 @@ export default function RequestStatusPage({
               <div>
                 <h2 className="dispatch-success">
                   {status === 'en_route'
-                    ? 'فیتەرەکە لە ڕێگادایە'
+                    ? statusCopy.enRoute
                     : t.fitterAccepted}
                 </h2>
                 <p>
                   {status === 'en_route'
-                    ? 'شوێنی فیتەرەکە و کاتی گەیشتنی خەمڵێنراو لەسەر نەخشە نوێ دەبێتەوە.'
+                    ? statusCopy.enRouteSub
                     : t.fitterAcceptedSub}
                 </p>
                 {fitterName && (
@@ -265,19 +291,19 @@ export default function RequestStatusPage({
                   {fitterLat ? (
                     <>
                       <span className="live-dot" />
-                      <span>فیتەرەکە لە ڕێگایەوە — شوێنی ڕاستەوخۆ</span>
+                      <span>{statusCopy.live}</span>
                     </>
                   ) : (
                     <>
                       <Loader2 size={14} className="spin" />
-                      <span>چاوەڕوانی لۆکەیشنی فیتەر...</span>
+                      <span>{statusCopy.locationWait}</span>
                     </>
                   )}
                 </div>
                 <p className="tracking-eta">
                   {etaMinutes
-                    ? `کاتی خەمڵێنراوی گەیشتن: نزیکەی ${etaMinutes} خولەک`
-                    : 'شوێنی فیتەرەکە چاوەڕێ دەکرێت…'}
+                    ? statusCopy.eta(etaMinutes)
+                    : statusCopy.etaWait}
                 </p>
                 <DispatchMap
                   userLat={userLat}
@@ -301,8 +327,8 @@ export default function RequestStatusPage({
             <div className="dispatch-icon accepted">
               <CheckCircle2 size={40} />
             </div>
-            <h2>خزمەتگوزاری تەواو بوو! ✅</h2>
-            <p>فیتەرەکە کارەکەی تەواو کرد. سوپاس بۆ بەکارهێنانت.</p>
+            <h2>{statusCopy.completed}</h2>
+            <p>{statusCopy.completedSub}</p>
             <Link
               href="/find"
               className="button primary"

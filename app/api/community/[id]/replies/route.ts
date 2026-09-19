@@ -1,7 +1,10 @@
 import { z } from 'zod';
 import { createCommunityReply, listCommunityPosts } from '@/lib/community';
 import { failure, HttpError, jsonBody, privateJson, rate, sameOrigin } from '@/lib/security';
-const schema = z.object({ fitter_code: z.string().regex(/^[a-f0-9]{32,48}$/), body: z.string().trim().min(10).max(1200) });
+// Dashboard codes are opaque secrets and may be imported from an existing
+// installation. Authorization still happens through the stored hash; limiting
+// the value to hexadecimal here incorrectly rejected otherwise valid portals.
+const schema = z.object({ fitter_code: z.string().trim().min(1).max(128), body: z.string().trim().min(10).max(1200) });
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try { const { id } = await params; const post = (await listCommunityPosts()).find((item) => item.id === id); if (!post) throw new HttpError(404, 'Post not found'); return Response.json({ replies: post.replies }); }
   catch (error) { return failure(error); }
