@@ -617,3 +617,5 @@
     margin-bottom: 8px;
   }
 }
+
+.ad-modal { max-height: calc(100dvh - 40px); overflow-wrap: anywhere; }

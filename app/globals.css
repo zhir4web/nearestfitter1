@@ -162,7 +162,7 @@ textarea {
 .brand small span {
   color: var(--primary);
 }
-nav {
+.site-header nav {
   display: flex;
   gap: 28px;
   font-size: 14px;
@@ -170,16 +170,16 @@ nav {
   height: 100%;
   align-items: center;
 }
-nav a {
+.site-header nav a {
   height: 100%;
   display: flex;
   align-items: center;
   position: relative;
 }
-nav a[data-active='true'] {
+.site-header nav a[data-active='true'] {
   color: #fff;
 }
-nav a[data-active='true']:after {
+.site-header nav a[data-active='true']:after {
   content: '';
   height: 3px;
   background: var(--primary);
@@ -1686,7 +1686,7 @@ h1 > span {
     width: 385px;
     min-width: 385px;
   }
-  nav {
+  .site-header nav {
     gap: 18px;
   }
   .brand {
@@ -1715,7 +1715,7 @@ h1 > span {
   .hide-on-mobile {
     display: none !important;
   }
-  nav {
+  .site-header nav {
     display: none;
   }
   .directory {
@@ -3370,12 +3370,20 @@ body {
     min-height: 70px;
     gap: 14px;
   }
+  .nf-header-inner:has(.nf-private-label) {
+    flex-wrap: wrap;
+    padding-block: 12px;
+  }
+  .nf-private-label {
+    margin-inline-start: auto;
+  }
   .nf-brand {
     font-size: 17px;
   }
   .nf-brand-mark {
     width: 37px;
     height: 37px;
+    flex-basis: 37px;
   }
   .nf-desktop-nav,
   .nf-city {
@@ -3389,8 +3397,11 @@ body {
     inset-inline: 10px;
     bottom: calc(10px + env(safe-area-inset-bottom));
     z-index: 45;
-    display: flex;
-    justify-content: space-around;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    height: auto;
+    gap: 0;
+    align-items: stretch;
     padding: 8px 5px;
     border: 1px solid var(--nf-line);
     border-radius: 17px;
@@ -3402,8 +3413,13 @@ body {
     display: grid;
     justify-items: center;
     gap: 2px;
-    min-width: 48px;
-    padding: 5px 6px;
+    min-width: 0;
+    min-height: 44px;
+    height: auto;
+    align-content: center;
+    text-align: center;
+    overflow-wrap: anywhere;
+    padding: 5px 2px;
     border-radius: 10px;
     color: var(--nf-muted);
     font-size: 9px;
@@ -3415,7 +3431,7 @@ body {
   }
   .nf-main {
     padding-top: 28px;
-    padding-bottom: 100px;
+    padding-bottom: calc(110px + env(safe-area-inset-bottom));
   }
   .nf-shell {
     width: min(100% - 28px, 680px);
@@ -5131,5 +5147,28 @@ body {
   }
   50% {
     box-shadow: 0 0 0 8px rgba(255, 85, 85, 0);
+  }
+}
+
+/* Public forms share the active theme instead of legacy fixed dark colors. */
+.content-page .intro,
+.content-page .back-link { color: var(--nf-muted); }
+.content-page .form-panel { background: var(--nf-surface); }
+.content-page .field > input,
+.content-page .field > textarea { background: var(--nf-bg); color: var(--nf-text); border-color: var(--nf-line); }
+
+@media (max-width: 900px) {
+  html { scroll-padding-bottom: calc(110px + env(safe-area-inset-bottom)); }
+  .nf-footer { padding-bottom: calc(100px + env(safe-area-inset-bottom)); }
+  .nf-main input, .nf-main textarea, .nf-main select,
+  .nf-portal input, .nf-portal textarea, .nf-portal select { font-size: 16px; }
+}
+@media (max-width: 380px) {
+  .nf-header-inner:has(.nf-private-label) .nf-private-label {
+    order: 3;
+    flex-basis: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
   }
 }

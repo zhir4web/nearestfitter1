@@ -77,3 +77,9 @@
 .nf-portal .nf-community { padding-inline: 0; max-width: none; }
 @media (max-width: 800px) { .nf-portal { padding: 26px 18px 110px; } .nf-portal-grid { grid-template-columns: 1fr; } .nf-portal-stats { grid-template-columns: repeat(2,minmax(0,1fr)); } .nf-portal-panel { padding: 20px; } .nf-portal-top { align-items: flex-start; } .nf-portal-map.large { height: 310px; } }
 @media (max-width: 480px) { .nf-portal-top { flex-direction: column; } .nf-portal-top > .nf-portal-actions { width: 100%; } .nf-portal-top > .nf-portal-actions > button { flex: 1; } .nf-portal-fields { grid-template-columns: 1fr; gap: 0; } .nf-portal-login { margin-top: 20px; } .nf-portal-stat { padding: 17px; } .nf-portal-stat strong { font-size: 25px; } .nf-portal-progress { gap: 6px; } .nf-portal-progress div { font-size: 10px; } }
+
+/* Keep confirmation actions reachable in landscape and with the keyboard open. */
+.nf-portal-confirm > div { max-height: calc(100dvh - 40px); overflow-y: auto; overflow-wrap: anywhere; }
+.nf-portal-stat strong { overflow-wrap: anywhere; }
+.nf-portal-top > :first-child { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.nf-portal-top > .nf-portal-actions, .nf-portal-top > button { flex-shrink: 0; }
