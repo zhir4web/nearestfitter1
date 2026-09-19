@@ -9,6 +9,7 @@ import {
   AlertTriangle,
   Home,
   Loader2,
+  ShieldCheck,
 } from 'lucide-react';
 import { useLanguage } from '@/components/language';
 import Link from 'next/link';
@@ -210,6 +211,12 @@ export default function RequestStatusPage({
                 {fitterName}
               </div>
             )}
+            <div className="status-waiting-steps" aria-label="دۆخی داواکاری">
+              <span className="active"><CheckCircle2 size={15} />داواکاری نێردرا</span>
+              <span><Loader2 size={15} className="spin" />چاوەڕوانی وەڵامی فیتەر</span>
+              <span><ShieldCheck size={15} />ژمارەکەت پارێزراوە</span>
+            </div>
+            <Link href="/find" className="status-back-link"><Home size={16} />گەڕانەوە بۆ فیتەرەکان</Link>
           </div>
         )}
 

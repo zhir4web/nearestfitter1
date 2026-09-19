@@ -554,7 +554,23 @@
   }
   .ad-tabs button {
     padding: 11px 14px;
+    min-height: 44px;
   }
+}
+@media (max-width: 420px) {
+  .ad-root { padding-inline: 14px; }
+  .ad-stats { grid-template-columns: 1fr; }
+  .ad-stats > div { min-height: 105px; }
+  .ad-table.accounts tr,
+  .ad-table.fitters tr { grid-template-columns: 1fr; padding: 14px; }
+  .ad-table.accounts td,
+  .ad-table.fitters td { padding: 7px 4px; }
+  .ad-table.accounts td:first-child,
+  .ad-table.accounts td:last-child,
+  .ad-table.fitters td:first-child,
+  .ad-table.fitters td:last-child { grid-column: auto; }
+  .ad-table td .ad-actions { gap: 8px; }
+  .ad-table td .ad-button { min-width: 44px; min-height: 44px; }
 }
 @media (max-width: 650px) {
   .ad-table.accounts thead,

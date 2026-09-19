@@ -25,6 +25,11 @@ const words = {
     fast: 'داواکاریی ڕاستەوخۆ و شوێنکەوتنی زیندوو',
     directory: 'نەخشە، گەڕان و پاڵاوتنی ورد',
     community: 'پرسیار و وەڵامی کێشەی سەیارە',
+    features: [
+      'فیتەرەکان بە ناوچە و خزمەتگوزاری بپشکنە',
+      'داواکارییەکەت بە پارێزراوی بنێرە',
+      'دوای قبوڵکردن، شوێنی فیتەر ببینە',
+    ],
   },
   en: {
     kicker: 'Roadside help, close to you',
@@ -37,6 +42,11 @@ const words = {
     fast: 'Direct requests with live tracking',
     directory: 'Detailed map, search, and filters',
     community: 'Community car-problem questions',
+    features: [
+      'Compare nearby fitters by area and service',
+      'Send a private help request',
+      'Track the fitter after acceptance',
+    ],
   },
   ar: {
     kicker: 'مساعدة على الطريق بالقرب منك',
@@ -49,6 +59,11 @@ const words = {
     fast: 'طلبات مباشرة وتتبع حي',
     directory: 'خريطة وبحث وفلاتر دقيقة',
     community: 'أسئلة المجتمع عن مشاكل السيارات',
+    features: [
+      'قارن الفنيين حسب المنطقة والخدمة',
+      'أرسل طلب مساعدة خاصاً',
+      'تتبع الفني بعد قبول الطلب',
+    ],
   },
 };
 
@@ -108,6 +123,14 @@ export function LandingPage() {
             {copy.community}
           </span>
         </div>
+      </section>
+      <section className="nf-shell nf-landing-features" aria-label={copy.kicker}>
+        {copy.features.map((feature, index) => (
+          <div key={feature}>
+            <span>{String(index + 1).padStart(2, '0')}</span>
+            <p>{feature}</p>
+          </div>
+        ))}
       </section>
       <Footer />
     </main>
